@@ -1,139 +1,194 @@
 <template>
-  <div>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-      <div class="container">
-        <a class="navbar-brand mb-0 h1" href="#">Defile Bird Forecasts</a>
-        <button class="btn btn-link text-white ms-3" @click="showSettings = true" title="Settings">
-          <i class="bi bi-gear" style="font-size: 1.5rem"></i>
-        </button>
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a
-              href="https://github.com/AmedeeRoy/defile-migration-forecast"
-              target="_blank"
-              class="nav-link"
-              title="GitHub"
-            >
-              <i class="bi bi-github" style="font-size: 1.5rem"></i>
-            </a>
-          </li>
-          <li class="nav-item d-flex align-items-center">
-            <a href="https://www.trektellen.org/count/view/2422/" target="_blank" class="nav-link">
-              <img
-                src="/trektellen_logo.png"
-                alt="Défilé de l'Ecluse"
-                style="height: 24px; width: auto; display: inline-block; vertical-align: middle"
-              />
-              Trektellen
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
-
-    <div class="container" style="padding-top: 80px">
-      <TodayTable :today="species.map((sp) => ({ ...sp.today, species: sp.species }))" />
-      <div class="row">
-        <div v-for="sp in speciesDisplay" :key="sp.species" class="col-12 mb-4">
-          <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="card-title my-0">{{ sp.species }}</h5>
-              <button
-                class="btn btn-sm btn-outline-secondary"
-                type="button"
-                @click="sp.collapsed = !sp.collapsed"
-              >
-                <i :class="sp.collapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
-              </button>
-            </div>
-            <div v-show="!sp.collapsed" class="card-body">
-              <div class="row">
-                <div class="col-6" v-if="plotOptions.find((p) => p.name === 'today').show">
-                  <PlotToday v-if="sp.today" :today="sp.today" />
-                </div>
-                <div class="col-6" v-if="plotOptions.find((p) => p.name === 'nextDays').show">
-                  <PlotNextDays v-if="sp.nextDays" :nextdays="sp.nextDays" />
-                </div>
-                <div class="col-12" v-if="plotOptions.find((p) => p.name === 'season').show">
-                  <PlotSeason v-if="sp" :season="sp" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center mb-0 h1" href="#">
+        <img
+          src="/defile_logo.png"
+          alt="Défilé de l'Ecluse"
+          style="height: 36px; width: auto; margin-right: 10px"
+        />
+        Defile Bird Forecasts
+      </a>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a
+            href="https://github.com/AmedeeRoy/defile-migration-forecast"
+            target="_blank"
+            class="nav-link"
+            title="GitHub"
+          >
+            <i class="bi bi-github" style="font-size: 1.5rem"></i>
+          </a>
+        </li>
+        <li class="nav-item d-flex align-items-center">
+          <a href="https://www.trektellen.org/count/view/2422/" target="_blank" class="nav-link">
+            <img
+              src="/trektellen_logo.png"
+              alt="Défilé de l'Ecluse"
+              style="height: 24px; width: auto; display: inline-block; vertical-align: middle"
+            />
+            Trektellen
+          </a>
+        </li>
+        <li class="nav-item d-flex align-items-center">
+          <button
+            class="btn btn-link text-white ms-2 p-0"
+            @click="showSettings = true"
+            title="Settings"
+          >
+            <i class="bi bi-gear" style="font-size: 1.5rem"></i>
+          </button>
+        </li>
+      </ul>
     </div>
+  </nav>
 
-    <!-- Settings Modal -->
-    <div
-      class="modal fade"
-      :class="{ show: showSettings }"
-      tabindex="-1"
-      style="display: block"
-      v-if="showSettings"
-      @click.self="showSettings = false"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Settings</h5>
-            <button type="button" class="btn-close" @click="showSettings = false"></button>
+  <div class="container">
+    <h1>Welcome to Defile Bird Forecasts</h1>
+    <div v-if="showIntro" class="alert alert-info alert-dismissible" role="alert">
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close"
+        @click="showIntro = false"
+      ></button>
+      <span>
+        This website provides a daily migration forecasts for the count of raptor species at the
+        Défilé de l'Ecluse, based on a
+        <a
+          href="https://github.com/AmedeeRoy/defile-migration-forecast"
+          target="_blank"
+          rel="noopener"
+          >neural network model</a
+        >.<br />
+        Check out the actual count on
+        <a href="https://www.trektellen.org/count/view/2422/" target="_blank" rel="noopener"
+          >Trektellen</a
+        >
+        and read more about this history of this project (in French) on the website of
+        <a
+          href="https://auvergne-rhone-alpes.lpo.fr/projets/migration-post-nuptiale-au-defile-de-lecluse/"
+          target="_blank"
+          rel="noopener"
+          >LPO Auvergne-Rhône-Alpes</a
+        >.
+      </span>
+    </div>
+    <TodayTable :today="species.map((sp) => ({ ...sp.today, species: sp.species }))" />
+    <h2>Hourly Prediction</h2>
+    <div class="row">
+      <div v-for="sp in speciesDisplay" :key="sp.species" class="col-12 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title my-0">{{ sp.species }}</h5>
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              type="button"
+              @click="sp.collapsed = !sp.collapsed"
+            >
+              <i :class="sp.collapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
+            </button>
           </div>
-          <div class="modal-body">
-            <!-- Date selection -->
-            <div class="mb-3 form-group">
-              <label for="date">Date</label>
-              <input type="date" id="date" v-model="selectedDate" class="form-control" disabled />
-            </div>
-            <!-- Plot selection -->
-            <div class="mb-3 form-group">
-              <label for="plots">Plots to display</label>
-              <div class="btn-group w-100" role="group" aria-label="Plot type selector" id="plots">
-                <button
-                  v-for="plot in plotOptions"
-                  :key="plot.name"
-                  type="button"
-                  class="btn btn-secondary"
-                  :class="{ active: plot.show }"
-                  @click="plot.show = !plot.show"
-                >
-                  {{ plot.label }}
-                </button>
+          <div v-show="!sp.collapsed" class="card-body">
+            <div class="row">
+              <div class="col-6" v-if="plotOptions.find((p) => p.name === 'today').show">
+                <PlotToday v-if="sp.today" :today="sp.today" />
               </div>
-            </div>
-            <!-- Threshold input -->
-            <div class="mb-3 form-group">
-              <label for="thr">Historical median count threshold </label>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                max="100"
-                v-model.number="medianThreshold"
-                id="thr"
-                class="form-control"
-                aria-describedby="thrHelp"
-              />
-              <small id="thrHelp" class="form-text text-muted"
-                >Only species with a higher historical median daily count for the day will be
-                displayed</small
-              >
-            </div>
-            <!-- Sort selection -->
-            <div class="mb-3 form-group">
-              <label for="sortOption" class="form-label">Sort species by</label>
-              <select v-model="sortOption" class="form-select" id="sortOption">
-                <option value="taxonomy">Taxonomy</option>
-                <option value="median">Median count</option>
-                <option value="predicted">Predicted count</option>
-                <option value="quantile">Quantile predicted</option>
-              </select>
+              <div class="col-6" v-if="plotOptions.find((p) => p.name === 'nextDays').show">
+                <PlotNextDays v-if="sp.nextDays" :nextdays="sp.nextDays" />
+              </div>
+              <div class="col-12" v-if="plotOptions.find((p) => p.name === 'season').show">
+                <PlotSeason v-if="sp" :season="sp" />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Settings Modal -->
+  <div
+    class="modal fade"
+    :class="{ show: showSettings }"
+    tabindex="-1"
+    style="display: block"
+    v-if="showSettings"
+    @click.self="showSettings = false"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Settings</h5>
+          <button type="button" class="btn-close" @click="showSettings = false"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Date selection -->
+          <div class="mb-3 form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" v-model="selectedDate" class="form-control" disabled />
+          </div>
+          <!-- Plot selection -->
+          <div class="mb-3 form-group">
+            <label for="plots">Plots to display</label>
+            <div class="btn-group w-100" role="group" aria-label="Plot type selector" id="plots">
+              <button
+                v-for="plot in plotOptions"
+                :key="plot.name"
+                type="button"
+                class="btn btn-secondary"
+                :class="{ active: plot.show }"
+                @click="plot.show = !plot.show"
+              >
+                {{ plot.label }}
+              </button>
+            </div>
+          </div>
+          <!-- Threshold input -->
+          <div class="mb-3 form-group">
+            <label for="thr">Historical median count threshold </label>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              max="100"
+              v-model.number="medianThreshold"
+              id="thr"
+              class="form-control"
+              aria-describedby="thrHelp"
+            />
+            <small id="thrHelp" class="form-text text-muted"
+              >Only species with a higher historical median daily count for the day will be
+              displayed</small
+            >
+          </div>
+          <!-- Sort selection -->
+          <div class="mb-3 form-group">
+            <label for="sortOption" class="form-label">Sort species by</label>
+            <select v-model="sortOption" class="form-select" id="sortOption">
+              <option value="taxonomy">Taxonomy</option>
+              <option value="median">Median count</option>
+              <option value="predicted">Predicted count</option>
+              <option value="quantile">Quantile predicted</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="bg-light border-top py-3 mt-5">
+    <div class="container d-flex flex-wrap justify-content-center align-items-center gap-4">
+      <a href="https://www.vogelwarte.ch/en/" target="_blank" rel="noopener" title="Vogelwarte">
+        <img src="/soi_logo.png" alt="Vogelwarte" style="height: 40px; width: auto" />
+      </a>
+      <a href="https://auvergne-rhone-alpes.lpo.fr/" target="_blank" rel="noopener" title="LPO">
+        <img src="/lpo_logo.png" alt="LPO" style="height: 40px; width: auto" />
+      </a>
+      <a href="https://www.trektellen.org/" target="_blank" rel="noopener" title="Trektellen">
+        <img src="/trektellen_logo2.jpg" alt="Trektellen" style="height: 40px; width: auto" />
+      </a>
+    </div>
+  </footer>
 </template>
 
 <script setup>
@@ -153,11 +208,12 @@ const species = ref(species_doy_statistics);
 const selectedDate = ref(new Date().toISOString().split("T")[0]);
 const plotOptions = ref([
   { name: "today", label: "Today", show: true },
-  { name: "nextDays", label: "Next Days", show: false },
-  { name: "season", label: "Season", show: false },
+  { name: "nextDays", label: "Next Days", show: true },
+  { name: "season", label: "Season", show: true },
 ]);
 const showSettings = ref(false);
-const medianThreshold = ref(5);
+const showIntro = ref(true);
+const medianThreshold = ref(0);
 const sortOption = ref("quantile");
 
 // Computed properties
@@ -238,7 +294,11 @@ async function updateSpeciesData(dateStr) {
         sp.today.q75 * 15
       );
 
-      sp.today.totalFold = sp.today.totalPredicted / sp.today.totalMedian;
+      if (sp.today.totalPredicted === 0) {
+        sp.today.totalFold = null;
+      } else {
+        sp.today.totalFold = sp.today.totalPredicted / sp.today.totalMedian;
+      }
     } catch (e) {
       console.error(`Failed to fetch forecast for ${sp.species}:`, e);
       sp.today.forecast = [];
@@ -349,9 +409,9 @@ watch(selectedDate, (newDate) => {
 });
 </script>
 
-<style scoped>
-.navbar {
-  min-height: 70px;
+<style>
+body {
+  padding-top: 120px;
 }
 .modal {
   display: block;

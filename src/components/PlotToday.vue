@@ -13,7 +13,7 @@
       </span>
     </div>
 
-    <p>
+    <p v-if="false">
       Today's prediction corresponds to the {{ Math.round(today.totalQuantile * 100) }}th
       percentile, which represents a {{ Math.round(today.totalFold * 10) / 10 }}-fold change
       relative to the median value of {{ Math.round(today.totalMedian) }}.
@@ -100,6 +100,44 @@ async function createPlot() {
     showlegend: false,
     dragmode: false,
     autosize: true,
+    annotations: [
+      {
+        x: 6,
+        y: today.median,
+        xref: "x",
+        yref: "y",
+        text: `Median (${today.median?.toFixed(1)})`,
+        showarrow: false,
+        font: { color: "red", size: 12 },
+        xanchor: "left",
+        yanchor: "bottom",
+        align: "left",
+      },
+      {
+        x: 6,
+        y: today.q25,
+        xref: "x",
+        yref: "y",
+        text: `Q25 (${today.q25?.toFixed(1)})`,
+        showarrow: false,
+        font: { color: "orange", size: 12 },
+        xanchor: "left",
+        yanchor: "bottom",
+        align: "left",
+      },
+      {
+        x: 6,
+        y: today.q75,
+        xref: "x",
+        yref: "y",
+        text: `Q75 (${today.q75?.toFixed(1)})`,
+        showarrow: false,
+        font: { color: "orange", size: 12 },
+        xanchor: "left",
+        yanchor: "bottom",
+        align: "left",
+      },
+    ],
   };
   allTraces.push(medianTrace, q25Trace, q75Trace);
   try {
