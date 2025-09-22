@@ -10,132 +10,145 @@ import { ref, onMounted, watch, nextTick } from "vue";
 import Plotly from "plotly.js-dist-min";
 
 const props = defineProps({
-  nextdays: { type: Object, required: true },
+  historical: { type: Array, required: true },
+  forecast: { type: Array, required: true },
+  date: { type: Array, required: true },
 });
 
 const plotDiv = ref(null);
 
 async function createPlot() {
-  const nextdays = props.nextdays;
+  const historical = props.historical;
+  const forecast = props.forecast;
+  const date = props.date;
 
-  if (!plotDiv.value || !nextdays) {
-    return;
-  }
+  if (!plotDiv.value || !historical || !forecast || !date) return;
+
+  const nDays = date.length;
+
+  // Infer hours per day from the first day that has predHourlyCount
+  const hoursPerDay =
+    forecast.find((d) => Array.isArray(d?.predHourlyCount) && d.predHourlyCount.length)
+      ?.predHourlyCount.length || 1;
 
   await nextTick();
-
-  // Clear existing plot
   Plotly.purge(plotDiv.value);
 
-  const allTraces = [];
+  const traces = [];
 
-  const hoursPerDay = 24;
-  const nDays = nextdays.median.length;
+  // Forecast bars (flatten all days sequentially)
+  if (forecast.length) {
+    const y = [];
+    const x = [];
+    const custom = [];
 
-  // Add forecast trace only if available
-  if (nextdays.forecast?.length > 0) {
-    const predCount = nextdays.forecast.map((f) => f.predHourlyCount).flat();
-    const date = nextdays.forecast.map((f) => f.date).flat();
+    for (let d = 0; d < nDays; d++) {
+      const dayArr = forecast[d]?.predHourlyCount || [];
 
-    const nHours = predCount.length;
-
-    // Create x-axis values for multiple days (starting from hour 0 of next day)
-    const xValues = Array.from({ length: nHours }, (_, i) => i + 0.5);
-
-    // Create custom data for hover with actual date and hour information
-    const customData = [];
-    for (let day = 0; day < nDays; day++) {
-      const dateStr = new Date(nextdays.forecast[day].date).toLocaleDateString();
-      for (let hour = 0; hour < hoursPerDay; hour++) {
-        const hourLabel = `${hour}h-${hour + 1}h`;
-        customData.push(`${dateStr}, ${hourLabel}`);
+      const dayStart = d * hoursPerDay;
+      for (let h = 1; h < dayArr.length; h++) {
+        // Place each bar at the center of its hour bucket within the day
+        x.push(dayStart + h + 0.5);
+        y.push(dayArr[h]);
+        const dateObj = date[d] ? new Date(date[d]) : null;
+        const dateLabel = dateObj
+          ? dateObj.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+          : `Day ${d + 1}`;
+        custom.push(`${dateLabel}, hour ${h}`);
       }
     }
 
-    const forecastTrace = {
-      x: xValues,
-      y: predCount,
+    traces.push({
+      x,
+      y,
       type: "bar",
-      customdata: customData,
-      hovertemplate: "%{customdata}<br>Count: %{y:.0f}<extra></extra>",
-      width: 1,
       name: "Forecast",
-    };
-    allTraces.push(forecastTrace);
-  }
-
-  // Default values for horizontal lines
-  const defaultLineTrace = {
-    type: "scatter",
-    mode: "lines",
-  };
-
-  // Add median line for each day
-
-  for (let day = 0; day < nDays; day++) {
-    const dayStart = day * hoursPerDay;
-    const dayEnd = (day + 1) * hoursPerDay;
-
-    allTraces.push({
-      ...defaultLineTrace,
-      x: [dayStart, dayEnd],
-      y: [nextdays.median[day], nextdays.median[day]],
-      line: { color: "red", width: 2, dash: "dash" },
-      name: `Median (${nextdays.median[day].toFixed(1)})`,
-      hovertemplate: "Historical Median: %{y:.0f}<extra></extra>",
-      showlegend: day === 0, // Only show in legend once
-    });
-
-    allTraces.push({
-      ...defaultLineTrace,
-      x: [dayStart, dayEnd],
-      y: [nextdays.q25[day], nextdays.q25[day]],
-      line: { color: "orange", width: 1, dash: "dot" },
-      name: `Q25 (${nextdays.q25[day].toFixed(1)})`,
-      hovertemplate: "Q25: %{y:.0f}<extra></extra>",
-    });
-
-    allTraces.push({
-      ...defaultLineTrace,
-      x: [dayStart, dayEnd],
-      y: [nextdays.q75[day], nextdays.q75[day]],
-
-      line: { color: "orange", width: 1, dash: "dot" },
-      name: `Q75 (${nextdays.q75[day].toFixed(1)})`,
-      hovertemplate: "Q75: %{y:.0f}<extra></extra>",
-      showlegend: day === 0,
+      customdata: custom,
+      hovertemplate: "%{customdata}<br>Count: %{y:.0f}<extra></extra>",
+      marker: { color: "#4e79a7" },
     });
   }
+
+  // Historical per-day grey band (Q25–Q75) and black median line, modulated by per-hour ratio
+  for (let d = 0; d < nDays; d++) {
+    const dayStart = d * hoursPerDay;
+    const dayLen = hoursPerDay;
+    const xDay = Array.from({ length: dayLen }, (_, h) => dayStart + 6 + h + 0.5);
+    const hist = historical?.[d] || {};
+    const ratio = Array.isArray(hist?.ratio) ? hist.ratio.slice(0, dayLen) : Array(dayLen).fill(1);
+
+    // Grey band Q25–Q75 if available
+    if (hist?.q25 != null && hist?.q75 != null) {
+      const y25 = ratio.map((r) => (r == null ? 1 : r) * Number(hist.q25));
+      const y75 = ratio.map((r) => (r == null ? 1 : r) * Number(hist.q75));
+      traces.push({
+        x: xDay,
+        y: y25,
+        type: "scatter",
+        mode: "lines",
+        line: { width: 0 },
+        hoverinfo: "skip",
+        showlegend: false,
+      });
+      traces.push({
+        x: xDay,
+        y: y75,
+        type: "scatter",
+        mode: "lines",
+        line: { width: 0 },
+        fill: "tonexty",
+        fillcolor: "rgba(128,128,128,0.25)",
+        hoverinfo: "skip",
+        name: d === 0 ? "Q25–Q75" : undefined,
+        showlegend: false,
+      });
+    }
+
+    // Median line if available
+    if (hist?.median != null) {
+      const yMed = ratio.map((r) => (r == null ? 1 : r) * Number(hist.median));
+      traces.push({
+        x: xDay,
+        y: yMed,
+        type: "scatter",
+        mode: "lines",
+        line: { color: "black", width: 2 },
+        name: d === 0 ? `Median (${Number(hist.median).toFixed(1)})` : undefined,
+        hovertemplate: "Median: %{y:.1f}<extra></extra>",
+        showlegend: false,
+      });
+    }
+  }
+
+  // X-axis tick labels: one per day centered
+  const tickvals = Array.from({ length: nDays }, (_, d) => d * hoursPerDay + hoursPerDay / 2);
+  const ticktext = Array.from({ length: nDays }, (_, d) => {
+    const dateObj = date[d] ? new Date(date[d]) : null;
+    return dateObj
+      ? dateObj.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      : `D${d + 1}`;
+  });
 
   const layout = {
     xaxis: {
-      title: "Time (Days and Hours)",
-      tickvals: Array.from({ length: nDays }, (_, day) => day * hoursPerDay + hoursPerDay / 2),
-      ticktext: Array.from({ length: nDays }, (_, day) => {
-        const baseDate = new Date(nextdays.date);
-        baseDate.setDate(baseDate.getDate() + day + 1);
-        return baseDate.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
-      }),
-      //range: [0, nHours],
+      title: "Future Days (hourly sequence)",
+      tickvals,
+      ticktext,
       fixedrange: true,
       showgrid: true,
     },
     yaxis: {
-      title: "Forecasted individual counts (#)",
+      title: "Hourly forecast count",
       fixedrange: true,
     },
     margin: { t: 0, l: 20, r: 0, b: 20 },
     showlegend: false,
     dragmode: false,
     autosize: true,
-    //height: 320,
   };
 
   try {
-    await Plotly.newPlot(plotDiv.value, allTraces, layout, {
+    await Plotly.newPlot(plotDiv.value, traces, layout, {
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false,
@@ -143,14 +156,17 @@ async function createPlot() {
       staticPlot: false,
       responsive: true,
     });
-    //console.log("Plot created successfully");
-  } catch (error) {
-    console.error("Error creating plot:", error);
+  } catch (e) {
+    console.error("Error creating next-days plot:", e);
   }
 }
 
 onMounted(createPlot);
-watch(() => props.nextdays, createPlot, { deep: true });
+watch(
+  () => [props.historical, props.forecast, props.date],
+  () => createPlot(),
+  { deep: true }
+);
 </script>
 
 <style scoped>

@@ -16,12 +16,14 @@ import Plotly from "plotly.js-dist-min";
 
 const props = defineProps({
   season: { type: Object, required: true },
+  date: { type: [String, Date], required: false },
 });
 
 const plotDiv = ref(null);
 
 async function createPlot() {
   const season = props.season;
+  const date = props.date;
 
   if (!season?.doy || !plotDiv.value) {
     return;
@@ -40,7 +42,7 @@ async function createPlot() {
     : 0;
 
   // Get today's DOY for vertical line
-  const today = new Date();
+  const today = new Date(date);
   const startOfYear = new Date(today.getFullYear(), 0, 0);
   const todayDoy = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24));
 

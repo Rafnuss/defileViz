@@ -9,4 +9,13 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "assets",
   },
+  server: {
+    proxy: {
+      "/api": {
+        target: "https://trektellen.org",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+    },
+  },
 });
