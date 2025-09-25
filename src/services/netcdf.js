@@ -10,7 +10,7 @@ import { NetCDFReader } from "netcdfjs";
  */
 export async function fetchNetCDF(dateStr, speciesName, variableNames = ["pred_log_hourly_count"]) {
   const speciesNameUnderscored = speciesName.replace(/ /g, "_");
-  const url = `http://35.239.221.194:8085/forecasts/${speciesNameUnderscored}/${dateStr.replace(
+  const url = `http://defile.raphaelnussbaumer.com/forecasts/${speciesNameUnderscored}/${dateStr.replace(
     /-/g,
     ""
   )}_${speciesNameUnderscored}.nc`;
