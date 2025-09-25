@@ -91,7 +91,7 @@ import { Popover } from "bootstrap";
 const props = defineProps({
   species: { type: Array, required: true },
 });
-const sortKey = ref("totalPredicted");
+const sortKey = ref("species");
 const sortOrder = ref("desc");
 const infoBtn = ref(null);
 const popoverContent = `<b>Species</b>: Bird species name.<br>

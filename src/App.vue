@@ -12,12 +12,41 @@
 
       <!-- Centered date selector -->
       <div class="d-flex mx-auto align-items-center">
+        <button
+          class="btn btn-outline-light btn-sm me-2"
+          @click="changeDateByDays(-1)"
+          :disabled="isLoadingData"
+          title="Previous day"
+        >
+          <i class="bi bi-chevron-left"></i>
+        </button>
         <input
           type="date"
           v-model="selectedDate"
+          :disabled="isLoadingData"
+          :max="todaysDate"
           class="form-control form-control-sm text-center"
           style="width: 150px"
         />
+        <button
+          v-show="!isToday"
+          class="btn btn-outline-light btn-sm ms-2"
+          @click="changeDateByDays(1)"
+          :disabled="isLoadingData"
+          title="Next day"
+        >
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <!-- Loading indicator with fixed space -->
+        <div class="ms-2" style="width: 24px; height: 24px">
+          <div
+            v-show="isLoadingData"
+            class="spinner-border spinner-border-sm text-light"
+            role="status"
+          >
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
       </div>
 
       <ul class="navbar-nav ms-auto align-items-center">
@@ -32,11 +61,7 @@
           </a>
         </li>
         <li class="nav-item d-flex align-items-center">
-          <a
-            :href="`https://www.trektellen.org/count/view/2422/${selectedDate.replace(/-/g, '')}`"
-            target="_blank"
-            class="nav-link"
-          >
+          <a :href="trektellenURL" target="_blank" class="nav-link">
             <img
               src="/trektellen_logo.png"
               alt="Défilé de l'Ecluse"
@@ -113,9 +138,10 @@
             <div class="row">
               <div class="col-6" v-if="plotOptions.find((p) => p.name === 'today').show">
                 <PlotToday
-                  v-if="sp.historical[0] && sp.forecast[0]"
+                  v-if="sp.historical[0]"
                   :historical="sp.historical[0]"
                   :forecast="sp.forecast[0]"
+                  :trektellen="sp.trektellen"
                 />
               </div>
               <div class="col-6" v-if="plotOptions.find((p) => p.name === 'nextDays').show">
@@ -198,6 +224,23 @@
               displayed</small
             >
           </div>
+          <!-- Next days length -->
+          <div class="mb-3 form-group">
+            <label for="nextDays">Number of next days to display</label>
+            <input
+              type="number"
+              step="1"
+              min="1"
+              max="7"
+              v-model.number="nextDaysLength"
+              id="nextDays"
+              class="form-control"
+              aria-describedby="nextDaysHelp"
+            />
+            <small id="nextDaysHelp" class="form-text text-muted"
+              >Number of days after today to show in the "Next Days" forecast</small
+            >
+          </div>
           <!-- Sort selection -->
           <div class="mb-3 form-group">
             <label for="sortOption" class="form-label">Sort species by</label>
@@ -237,11 +280,37 @@ import TodayTable from "./components/TodayTable.vue";
 import PlotWeather from "./components/PlotWeather.vue";
 import Footer from "./components/Footer.vue";
 
+/**
+ * Gets date from URL or defaults to today, validates it's not in future
+ * @returns {string} Valid date string in YYYY-MM-DD format
+ */
+function getDateFromURL() {
+  const dateParam = new URLSearchParams(window.location.search).get("date");
+  const today = new Date().toISOString().split("T")[0];
+
+  // Return URL date if valid and not in future, otherwise today
+  return dateParam && dateParam <= today && !isNaN(new Date(dateParam)) ? dateParam : today;
+}
+
+/**
+ * Updates URL and browser history with current date
+ */
+function updateURL(dateStr) {
+  const url = new URL(window.location);
+  url.searchParams.set("date", dateStr);
+  window.history.pushState({ date: dateStr }, "", url);
+}
+
+// Constants
+const N_HOURS = 15;
+
 // Reactive data
-const nextDaysLength = 3;
 const species = ref([]);
 const weather = ref(null);
-const selectedDate = ref(new Date().toISOString().split("T")[0]);
+const selectedDate = ref(getDateFromURL());
+const isLoadingData = ref(false);
+
+// UI state
 const plotOptions = ref([
   { name: "today", label: "Today", show: true },
   { name: "nextDays", label: "Next Days", show: true },
@@ -249,30 +318,39 @@ const plotOptions = ref([
 ]);
 const showSettings = ref(false);
 const showIntro = ref(true);
-const medianThreshold = ref(0); // unified name (was historicalMedianThreshold)
-const nHours = ref(15);
-const sortOption = ref("quantile");
+
+// Settings
+const medianThreshold = ref(0);
+const nextDaysLength = ref(3);
+const sortOption = ref("taxonomy");
 
 // Computed properties
+const todaysDate = computed(() => new Date().toISOString().split("T")[0]);
+const isToday = computed(() => selectedDate.value === todaysDate.value);
+const trektellenURL = computed(
+  () => `https://www.trektellen.org/count/view/2422/${selectedDate.value.replace(/-/g, "")}`
+);
+
 const speciesDisplay = computed(() => {
-  let arr = species.value.filter(
-    (sp) =>
-      sp.historical[0]?.median && sp.historical[0]?.median * nHours.value > medianThreshold.value
+  const filtered = species.value.filter(
+    (sp) => sp.historical[0]?.median && sp.historical[0]?.median * N_HOURS > medianThreshold.value
   );
-  if (sortOption.value === "taxonomy") {
-    return arr;
-  } else if (sortOption.value === "median") {
-    return [...arr].sort((a, b) => (b.historical[0]?.median || 0) - (a.historical[0]?.median || 0));
-  } else if (sortOption.value === "predicted") {
-    return [...arr].sort(
-      (a, b) => (b.forecast[0]?.predTotal || 0) - (a.forecast[0]?.predTotal || 0)
-    );
-  } else if (sortOption.value === "quantile") {
-    return [...arr].sort(
-      (a, b) => (b.forecast[0]?.predTotalQuantile || 0) - (a.forecast[0]?.predTotalQuantile || 0)
-    );
-  }
-  return arr;
+
+  const sortFunctions = {
+    taxonomy: () => filtered,
+    median: () =>
+      [...filtered].sort((a, b) => (b.historical[0]?.median || 0) - (a.historical[0]?.median || 0)),
+    predicted: () =>
+      [...filtered].sort(
+        (a, b) => (b.forecast[0]?.predTotal || 0) - (a.forecast[0]?.predTotal || 0)
+      ),
+    quantile: () =>
+      [...filtered].sort(
+        (a, b) => (b.forecast[0]?.predTotalQuantile || 0) - (a.forecast[0]?.predTotalQuantile || 0)
+      ),
+  };
+
+  return sortFunctions[sortOption.value]() || filtered;
 });
 
 /**
@@ -280,11 +358,12 @@ const speciesDisplay = computed(() => {
  * @param {string} dateStr - Date string in YYYY-MM-DD format
  */
 async function updateSpeciesData(dateStr) {
+  isLoadingData.value = true;
+
   // Convert date to day of year
   const date = new Date(dateStr);
-  const start = new Date(date.getFullYear(), 0, 0);
-  const doy = Math.floor((date - start) / (1000 * 60 * 60 * 24));
-
+  const startOfYear = new Date(date.getFullYear(), 0, 0);
+  const doy = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
   species.value = species_doy_statistics.map((sp0) => {
     const sp = {
       species: sp0.species,
@@ -300,8 +379,9 @@ async function updateSpeciesData(dateStr) {
 
     const sds = species_doy_statistics.find((s) => s.species === sp.species); // ensure reference
     const todayId = sds.doy.indexOf(doy);
+    const maxDays = 14; // Limit to 14 days max
 
-    for (let i = 0; i < nextDaysLength + 1; i++) {
+    for (let i = 0; i < maxDays; i++) {
       // Date entry
       const d2 = new Date(date);
       d2.setDate(d2.getDate() + i);
@@ -333,7 +413,7 @@ async function updateSpeciesData(dateStr) {
 
       const NbOfHours = forecastData[0].length;
 
-      sp.forecast = forecastData.slice(0, nextDaysLength + 1).map((arr, idx) => {
+      sp.forecast = forecastData.map((arr, idx) => {
         const predTotal = (arr || []).reduce((x, y) => x + (y ?? 0), 0);
 
         const predTotalQuantile = predictQuantile(
@@ -364,52 +444,85 @@ async function updateSpeciesData(dateStr) {
   await Promise.all(promises);
 
   // Fetch weather data
-  weather.value = await fetchNetCDF(dateStr, "Osprey", [
-    "temperature_2m",
-    "dewpoint_temperature_2m",
-    "total_precipitation",
-    "surface_pressure",
-    "u_component_of_wind_10m",
-    "v_component_of_wind_10m",
-    "u_component_of_wind_100m",
-    "v_component_of_wind_100m",
-    "instantaneous_10m_wind_gust",
-    "high_cloud_cover",
-    "low_cloud_cover",
-    "medium_cloud_cover",
-    "total_cloud_cover",
-    "surface_solar_radiation_downwards",
-    "sun_altitude",
-    "sun_azimuth",
-  ]);
-
-  // Fetch Trektellen data (requires authentication)
   try {
-    const bySpecies = await fetchTrektellenData(dateStr, 2422);
+    weather.value = await fetchNetCDF(dateStr, "Osprey", [
+      "temperature_2m",
+      "dewpoint_temperature_2m",
+      "total_precipitation",
+      "surface_pressure",
+      "u_component_of_wind_10m",
+      "v_component_of_wind_10m",
+      "u_component_of_wind_100m",
+      "v_component_of_wind_100m",
+      "instantaneous_10m_wind_gust",
+      "high_cloud_cover",
+      "low_cloud_cover",
+      "medium_cloud_cover",
+      "total_cloud_cover",
+      "surface_solar_radiation_downwards",
+      "sun_altitude",
+      "sun_azimuth",
+    ]);
+  } catch (e) {
+    console.error("Error fetching weather data:", e);
+    weather.value = null;
+  }
+
+  // Fetch Trektellen data
+  try {
+    const bySpecies = await fetchTrektellenData(dateStr);
     if (!bySpecies || Object.keys(bySpecies).length === 0) {
       console.warn("Trektellen: no data for date or empty response");
-    }
-    for (const sp of species.value) {
-      const obsList = bySpecies[String(sp.trektellen_species_id)];
-      if (!obsList || !obsList.length) continue;
-      sp.trektellen = {
-        observations: obsList,
-        count: obsList.reduce((sum, o) => sum + (o?.left ?? 0), 0),
-      };
+    } else {
+      for (const sp of species.value) {
+        const obsList = bySpecies[String(sp.trektellen_species_id)];
+        if (obsList?.length) {
+          sp.trektellen = {
+            observations: obsList,
+            count: obsList.reduce((sum, o) => sum + (o?.left ?? 0), 0),
+          };
+        }
+      }
     }
   } catch (e) {
     console.error("Error fetching Trektellen data:", e);
+  }
+
+  // Always reset loading state
+  isLoadingData.value = false;
+}
+
+/**
+ * Changes the selected date by a specified number of days
+ * @param {number} days - Number of days to add (positive) or subtract (negative)
+ */
+function changeDateByDays(days) {
+  if (isLoadingData.value) return;
+
+  const newDate = new Date(selectedDate.value);
+  newDate.setDate(newDate.getDate() + days);
+  const newDateStr = newDate.toISOString().split("T")[0];
+
+  // Only update if new date doesn't exceed today
+  if (newDateStr <= todaysDate.value) {
+    selectedDate.value = newDateStr;
   }
 }
 
 // Lifecycle hooks
 onMounted(() => {
   updateSpeciesData(selectedDate.value);
+
+  // Handle browser back/forward navigation
+  window.addEventListener("popstate", () => {
+    selectedDate.value = getDateFromURL();
+  });
 });
 
 // Watchers
 watch(selectedDate, (newDate) => {
   updateSpeciesData(newDate);
+  updateURL(newDate);
 });
 </script>
 
