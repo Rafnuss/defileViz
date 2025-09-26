@@ -111,14 +111,14 @@ async function createPlot() {
   if (medianTrace) allTraces.push(medianTrace);
 
   // 2. FORECAST BARS (when available - middle layer)
-  if (predCount && nHours) {
+  if (predCount) {
     const forecastTrace = {
-      x: Array.from({ length: nHours }, (_, i) => i + 0.5),
+      x: Array.from({ length: predCount.length }, (_, i) => i + 0.5),
       y: predCount,
       type: "bar",
       text: predCount.map((v) => v.toFixed(1)),
       textposition: "auto",
-      customdata: Array.from({ length: nHours }, (_, i) => `${i}h-${i + 1}h`),
+      customdata: Array.from({ length: predCount.length }, (_, i) => `${i}h-${i + 1}h`),
       hovertemplate: "%{customdata}<br>Forecast: %{y:.0f}<extra></extra>",
       width: 1,
       name: "Forecast",
