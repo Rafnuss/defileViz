@@ -241,13 +241,13 @@ function getSignificance(quantile) {
 
   const percentile = Math.round(quantile);
 
-  if (quantile >= 0.9) {
+  if (quantile >= 90) {
     color = "red";
     explanation = `Exceptionally high compared to historical years (${percentile}<sup>th</sup> percentile).`;
-  } else if (quantile >= 0.8) {
+  } else if (quantile >= 80) {
     color = "orange";
     explanation = `Notably high compared to historical years (${percentile}<sup>th</sup> percentile).`;
-  } else if (quantile >= 0.5) {
+  } else if (quantile >= 50) {
     color = "green";
     explanation = `Above average compared to historical years (${percentile}<sup>th</sup> percentile).`;
   } else {
