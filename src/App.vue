@@ -1,6 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
     <div class="container">
+      <!-- Brand -->
       <a class="navbar-brand d-flex align-items-center mb-0 h1" href="#">
         <img
           src="/defile_logo.png"
@@ -10,8 +11,8 @@
         Defile Bird Forecasts
       </a>
 
-      <!-- Centered date selector -->
-      <div class="d-flex mx-auto align-items-center">
+      <!-- Date selector (desktop: center, mobile: below brand) -->
+      <div class="d-none d-lg-flex mx-auto align-items-center">
         <button
           class="btn btn-outline-light btn-sm me-2"
           @click="changeDateByDays(-1)"
@@ -49,37 +50,101 @@
         </div>
       </div>
 
-      <ul class="navbar-nav ms-auto align-items-center">
-        <li class="nav-item">
-          <a
-            href="https://github.com/AmedeeRoy/defile-migration-forecast"
-            target="_blank"
-            class="nav-link"
-            title="GitHub"
-          >
-            <i class="bi bi-github" style="font-size: 1.5rem"></i>
-          </a>
-        </li>
-        <li class="nav-item d-flex align-items-center">
-          <a :href="trektellenURL" target="_blank" class="nav-link">
-            <img
-              src="/trektellen_logo.png"
-              alt="Défilé de l'Ecluse"
-              style="height: 24px; width: auto; display: inline-block; vertical-align: middle"
-            />
-            Trektellen
-          </a>
-        </li>
-        <li class="nav-item d-flex align-items-center">
+      <!-- Hamburger menu button -->
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Collapsible navbar content -->
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <!-- Mobile date selector -->
+        <div
+          class="d-lg-none d-flex justify-content-center align-items-center py-3 border-bottom border-light border-opacity-25 mb-3"
+        >
           <button
-            class="btn btn-link text-white ms-2 p-0"
-            @click="showSettings = true"
-            title="Settings"
+            class="btn btn-outline-light btn-sm me-2"
+            @click="changeDateByDays(-1)"
+            :disabled="isLoadingData"
+            title="Previous day"
           >
-            <i class="bi bi-gear" style="font-size: 1.5rem"></i>
+            <i class="bi bi-chevron-left"></i>
           </button>
-        </li>
-      </ul>
+          <input
+            type="date"
+            v-model="selectedDate"
+            :disabled="isLoadingData"
+            :max="todaysDate"
+            class="form-control form-control-sm text-center"
+            style="width: 150px"
+          />
+          <button
+            v-show="!isToday"
+            class="btn btn-outline-light btn-sm ms-2"
+            @click="changeDateByDays(1)"
+            :disabled="isLoadingData"
+            title="Next day"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <!-- Loading indicator with fixed space -->
+          <div class="ms-2" style="width: 24px; height: 24px">
+            <div
+              v-show="isLoadingData"
+              class="spinner-border spinner-border-sm text-light"
+              role="status"
+            >
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation links -->
+        <ul class="navbar-nav ms-auto align-items-lg-center text-center">
+          <li class="nav-item">
+            <a
+              href="https://github.com/AmedeeRoy/defile-migration-forecast"
+              target="_blank"
+              class="nav-link"
+              title="GitHub"
+            >
+              <i class="bi bi-github" style="font-size: 1.5rem"></i>
+              <span class="d-lg-none ms-2">GitHub</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              :href="trektellenURL"
+              target="_blank"
+              class="nav-link d-flex align-items-center justify-content-center justify-content-lg-start"
+            >
+              <img
+                src="/trektellen_logo.png"
+                alt="Défilé de l'Ecluse"
+                style="height: 24px; width: auto"
+              />
+              <span class="ms-2">Trektellen</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <button
+              class="nav-link btn btn-link text-white p-0 border-0 d-flex align-items-center justify-content-center justify-content-lg-start"
+              @click="showSettings = true"
+              title="Settings"
+            >
+              <i class="bi bi-gear" style="font-size: 1.5rem"></i>
+              <span class="d-lg-none ms-2">Settings</span>
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
   </nav>
 
@@ -120,12 +185,22 @@
         }))
       "
     />
-    <h2>Hourly Prediction</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">Hourly Prediction</h2>
+      <button class="btn btn-outline-secondary btn-sm" @click="toggleAllSpecies" type="button">
+        <i :class="allCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
+        {{ allCollapsed ? "Expand All" : "Collapse All" }}
+      </button>
+    </div>
     <div class="row">
-      <div v-for="sp in speciesDisplay" :key="sp.species" class="col-12 mb-4">
+      <div v-for="sp in speciesDisplay" :key="sp.species" class="col-12 mb-1">
         <div class="card h-100">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title my-0">{{ sp.species }}</h5>
+          <div
+            class="card-header d-flex justify-content-between align-items-center"
+            @click="sp.collapsed = !sp.collapsed"
+            style="cursor: pointer"
+          >
+            <h5 class="card-title my-0" :id="sp.species">{{ sp.species }}</h5>
             <button
               class="btn btn-sm btn-outline-secondary"
               type="button"
@@ -162,6 +237,8 @@
                   v-if="sp"
                   :season="species_doy_statistics.find((s) => s.species === sp.species)"
                   :date="sp.date[0]"
+                  :totalPredicted="sp.forecast[0]?.predTotal"
+                  :totalObserved="sp.trektellen?.count"
                 />
               </div>
             </div>
@@ -260,7 +337,7 @@
 
 <script setup>
 // Vue imports
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted, computed, provide } from "vue";
 
 // Species data
 import species_doy_statistics from "../src/species_doy_statistics.json";
@@ -302,7 +379,18 @@ function updateURL(dateStr) {
 }
 
 // Constants
-const N_HOURS = 15;
+const N_HOURS = 12;
+const QUANTILE_LEVELS = species_doy_statistics[0]?.quantile_levels || [
+  1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99,
+];
+const ID_MEDIAN = QUANTILE_LEVELS.indexOf(50);
+const ID_LOWER = QUANTILE_LEVELS.indexOf(20);
+const ID_UPPER = QUANTILE_LEVELS.indexOf(80);
+
+provide("N_HOURS", N_HOURS);
+provide("ID_MEDIAN", ID_MEDIAN);
+provide("ID_LOWER", ID_LOWER);
+provide("ID_UPPER", ID_UPPER);
 
 // Reactive data
 const species = ref([]);
@@ -321,7 +409,7 @@ const showIntro = ref(true);
 
 // Settings
 const medianThreshold = ref(0);
-const nextDaysLength = ref(3);
+const nextDaysLength = ref(4);
 const sortOption = ref("taxonomy");
 
 // Computed properties
@@ -353,6 +441,10 @@ const speciesDisplay = computed(() => {
   return sortFunctions[sortOption.value]() || filtered;
 });
 
+const allCollapsed = computed(() => {
+  return species.value.every((sp) => sp.collapsed);
+});
+
 /**
  * Updates species data for a given date
  * @param {string} dateStr - Date string in YYYY-MM-DD format
@@ -368,6 +460,7 @@ async function updateSpeciesData(dateStr) {
     const sp = {
       species: sp0.species,
       trektellen_species_id: sp0.trektellen_species_id,
+      quantile_levels: sp0.quantile_levels,
       collapsed: false,
     };
 
@@ -380,6 +473,7 @@ async function updateSpeciesData(dateStr) {
     const sds = species_doy_statistics.find((s) => s.species === sp.species); // ensure reference
     const todayId = sds.doy.indexOf(doy);
     const maxDays = 14; // Limit to 14 days max
+    const id_median = sp.quantile_levels.indexOf(50);
 
     for (let i = 0; i < maxDays; i++) {
       // Date entry
@@ -390,11 +484,12 @@ async function updateSpeciesData(dateStr) {
       // Historical stats entry with bounds guards
       const idx = todayId + i;
       sp.historical.push({
-        median: sds.median?.[idx] ?? null,
-        q25: sds.q25?.[idx] ?? null,
-        q75: sds.q75?.[idx] ?? null,
+        quantiles: sds.quantiles?.[idx] ?? null,
+        min: sds.min?.[idx] ?? null,
+        max: sds.max?.[idx] ?? null,
         mean: sds.mean?.[idx] ?? null,
         ratio: sds.ratio?.[idx] ?? null,
+        median: sds.quantiles?.[idx][id_median] ?? null,
       });
     }
 
@@ -411,28 +506,18 @@ async function updateSpeciesData(dateStr) {
 
       if (!forecastData.length || !forecastData[0]?.length) throw new Error("No forecast data");
 
-      const NbOfHours = forecastData[0].length;
-
       sp.forecast = forecastData.map((arr, idx) => {
         const predTotal = (arr || []).reduce((x, y) => x + (y ?? 0), 0);
 
         const predTotalQuantile = predictQuantile(
           predTotal,
-          sp.historical[idx].q25 * NbOfHours,
-          sp.historical[idx].median * NbOfHours,
-          sp.historical[idx].q75 * NbOfHours
+          sp.historical[idx].quantiles.map((q) => q * N_HOURS), // historical is per hour, scale to total
+          sp.quantile_levels
         );
-
-        const predTotalFold =
-          sp.historical[idx].median && NbOfHours
-            ? predTotal / (sp.historical[idx].median * NbOfHours)
-            : null;
-
         return {
           predHourlyCount: arr,
           predTotal: predTotal,
           predTotalQuantile: predTotalQuantile,
-          predTotalFold: predTotalFold,
         };
       });
     } catch (e) {
@@ -481,7 +566,17 @@ async function updateSpeciesData(dateStr) {
             observations: obsList,
             count: obsList.reduce((sum, o) => sum + (o?.left ?? 0), 0),
           };
+        } else {
+          sp.trektellen = {
+            observations: [],
+            count: 0,
+          };
         }
+        sp.trektellen.totalQuantile = predictQuantile(
+          sp.trektellen.count,
+          sp.historical[0].quantiles.map((q) => q * N_HOURS), // historical is per hour, scale to total
+          sp.quantile_levels
+        );
       }
     }
   } catch (e) {
@@ -509,6 +604,16 @@ function changeDateByDays(days) {
   }
 }
 
+/**
+ * Toggles collapse state of all species cards
+ */
+function toggleAllSpecies() {
+  const shouldCollapse = !allCollapsed.value;
+  species.value.forEach((sp) => {
+    sp.collapsed = shouldCollapse;
+  });
+}
+
 // Lifecycle hooks
 onMounted(() => {
   updateSpeciesData(selectedDate.value);
@@ -528,14 +633,11 @@ watch(selectedDate, (newDate) => {
 
 <style>
 body {
-  padding-top: 120px;
+  padding-top: 80px;
 }
-.modal {
-  display: block;
-  background: rgba(0, 0, 0, 0.5);
-}
-.modal.fade:not(.show) {
-  opacity: 0;
-  pointer-events: none;
+
+/* Fix anchor links appearing behind fixed navbar */
+:target {
+  scroll-margin-top: 80px;
 }
 </style>

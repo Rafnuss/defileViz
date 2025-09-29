@@ -11,13 +11,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from "vue";
+import { ref, onMounted, watch, nextTick, inject } from "vue";
 import Plotly from "plotly.js-dist-min";
 
 const props = defineProps({
   season: { type: Object, required: true },
   date: { type: [String, Date], required: false },
+  totalPredicted: { type: Number, required: false },
+  totalObserved: { type: Number, required: false },
 });
+
+const ID_MEDIAN = inject("ID_MEDIAN");
+const ID_LOWER = inject("ID_LOWER");
+const ID_UPPER = inject("ID_UPPER");
+const N_HOURS = inject("N_HOURS");
 
 const plotDiv = ref(null);
 
@@ -33,10 +40,12 @@ async function createPlot() {
 
   // Extract data from season object
   const doy = season.doy;
-  const median = season.median;
-  const mean = season.mean;
-  const q25 = season.q25;
-  const q75 = season.q75;
+
+  // Convert per-hour values to per-day totals by multiplying by N_HOURS
+  const mean = season.mean.map((m) => m * N_HOURS);
+  const lower = season.quantiles.map((q) => q[ID_LOWER] * N_HOURS);
+  const upper = season.quantiles.map((q) => q[ID_UPPER] * N_HOURS);
+  const median = season.quantiles.map((q) => q[ID_MEDIAN] * N_HOURS);
   const totalObs = season.count_observations
     ? season.count_observations.reduce((sum, count) => sum + count, 0)
     : 0;
@@ -62,14 +71,14 @@ async function createPlot() {
   // Create traces
   const traces = [];
 
-  // Quantile fill (25-75%)
+  // Quantile fill
   traces.push({
     x: [...doy, ...doy.slice().reverse()],
-    y: [...q75, ...q25.slice().reverse()],
+    y: [...upper, ...lower.slice().reverse()],
     fill: "toself",
     fillcolor: "rgba(128, 128, 128, 0.3)",
     line: { color: "transparent" },
-    name: "25-75% Quantile",
+    name: "20-80% Quantile",
     hoverinfo: "skip",
     showlegend: true,
   });
@@ -85,19 +94,17 @@ async function createPlot() {
     hovertemplate: "DOY: %{x}<br>Median: %{y:.2f}<extra></extra>",
   });
 
-  // Mean line (dashed)
-  traces.push({
-    x: doy,
-    y: mean,
-    type: "scatter",
-    mode: "lines",
-    line: { color: "black", width: 2, dash: "dash" },
-    name: "Mean",
-    hovertemplate: "DOY: %{x}<br>Mean: %{y:.2f}<extra></extra>",
-  });
-
   // Today's vertical line
-  const yRange = [...q25, ...q75, ...median, ...mean];
+  const yRange = [...lower, ...upper];
+
+  // Include predicted and observed values in range calculation
+  if (props.totalPredicted != null) {
+    yRange.push(props.totalPredicted);
+  }
+  if (props.totalObserved != null && props.totalObserved > 0) {
+    yRange.push(props.totalObserved);
+  }
+
   const minY = Math.min(...yRange);
   const maxY = Math.max(...yRange);
 
@@ -111,6 +118,42 @@ async function createPlot() {
     hovertemplate: "Today<extra></extra>",
   });
 
+  // Add predicted total as blue dot
+  if (props.totalPredicted != null) {
+    traces.push({
+      x: [todayDoy],
+      y: [props.totalPredicted],
+      type: "scatter",
+      mode: "markers",
+      marker: {
+        color: "rgba(31, 119, 180, 0.8)", // Blue color matching forecast bars
+        size: 12,
+        symbol: "circle",
+        line: { color: "rgba(31, 119, 180, 1)", width: 2 },
+      },
+      name: "Predicted Total",
+      hovertemplate: "Predicted: %{y:.1f}<extra></extra>",
+    });
+  }
+
+  // Add observed total as red dot
+  if (props.totalObserved > 0) {
+    traces.push({
+      x: [todayDoy],
+      y: [props.totalObserved],
+      type: "scatter",
+      mode: "markers",
+      marker: {
+        color: "rgba(220, 53, 69, 0.8)", // Red color matching trektellen observations
+        size: 12,
+        symbol: "circle",
+        line: { color: "rgba(220, 53, 69, 1)", width: 2 },
+      },
+      name: "Observed Total",
+      hovertemplate: "Observed: %{y:.1f}<extra></extra>",
+    });
+  }
+
   const layout = {
     title: `Species (n=${totalObs})`,
     xaxis: {
@@ -120,7 +163,7 @@ async function createPlot() {
       ticktext: monthLabels,
     },
     yaxis: {
-      title: "Count Rate",
+      title: "Daily Count Total",
       fixedrange: true,
     },
     margin: { t: 0, l: 20, r: 0, b: 20 },

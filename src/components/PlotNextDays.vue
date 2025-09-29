@@ -6,14 +6,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from "vue";
+import { ref, onMounted, watch, nextTick, inject } from "vue";
 import Plotly from "plotly.js-dist-min";
+import { createHistoricalLineTrace } from "../utils/stats";
 
 const props = defineProps({
   historical: { type: Array, required: true },
   forecast: { type: Array, required: true },
   date: { type: Array, required: true },
 });
+
+const ID_MEDIAN = inject("ID_MEDIAN");
+const ID_LOWER = inject("ID_LOWER");
+const ID_UPPER = inject("ID_UPPER");
 
 const plotDiv = ref(null);
 
@@ -77,46 +82,68 @@ async function createPlot() {
     const hist = historical?.[d] || {};
     const ratio = Array.isArray(hist?.ratio) ? hist.ratio.slice(0, dayLen) : Array(dayLen).fill(1);
 
-    // Grey band Q25–Q75 if available
-    if (hist?.q25 != null && hist?.q75 != null) {
-      const y25 = ratio.map((r) => (r == null ? 1 : r) * Number(hist.q25));
-      const y75 = ratio.map((r) => (r == null ? 1 : r) * Number(hist.q75));
-      traces.push({
-        x: xDay,
-        y: y25,
-        type: "scatter",
-        mode: "lines",
-        line: { width: 0 },
-        hoverinfo: "skip",
-        showlegend: false,
-      });
-      traces.push({
-        x: xDay,
-        y: y75,
-        type: "scatter",
-        mode: "lines",
-        line: { width: 0 },
-        fill: "tonexty",
-        fillcolor: "rgba(128,128,128,0.25)",
-        hoverinfo: "skip",
-        name: d === 0 ? "Q25–Q75" : undefined,
-        showlegend: false,
-      });
+    // Grey band Q25–Q75 if available (using smooth traces)
+    if (hist?.quantiles != null) {
+      const lowerTrace = createHistoricalLineTrace(
+        xDay,
+        ratio,
+        hist.quantiles[ID_LOWER],
+        "transparent",
+        "solid",
+        "",
+        true
+      );
+      const upperTrace = createHistoricalLineTrace(
+        xDay,
+        ratio,
+        hist.quantiles[ID_UPPER],
+        "transparent",
+        "solid",
+        "",
+        true
+      );
+
+      if (lowerTrace && upperTrace) {
+        traces.push({
+          ...lowerTrace,
+          line: { ...lowerTrace.line, width: 0 },
+          hoverinfo: "skip",
+          showlegend: false,
+          name: undefined,
+          hovertemplate: undefined,
+        });
+        traces.push({
+          ...upperTrace,
+          line: { ...upperTrace.line, width: 0 },
+          fill: "tonexty",
+          fillcolor: "rgba(128,128,128,0.25)",
+          hoverinfo: "skip",
+          name: d === 0 ? "Q20–Q80" : undefined,
+          showlegend: false,
+          hovertemplate: undefined,
+        });
+      }
     }
 
-    // Median line if available
+    // Median line if available (using smooth trace)
     if (hist?.median != null) {
-      const yMed = ratio.map((r) => (r == null ? 1 : r) * Number(hist.median));
-      traces.push({
-        x: xDay,
-        y: yMed,
-        type: "scatter",
-        mode: "lines",
-        line: { color: "black", width: 2 },
-        name: d === 0 ? `Median (${Number(hist.median).toFixed(1)})` : undefined,
-        hovertemplate: "Median: %{y:.1f}<extra></extra>",
-        showlegend: false,
-      });
+      const medianTrace = createHistoricalLineTrace(
+        xDay,
+        ratio,
+        hist.median,
+        "black",
+        "solid",
+        "Median",
+        true
+      );
+
+      if (medianTrace) {
+        traces.push({
+          ...medianTrace,
+          name: d === 0 ? `Median (${Number(hist.median).toFixed(1)})` : undefined,
+          showlegend: false,
+        });
+      }
     }
   }
 

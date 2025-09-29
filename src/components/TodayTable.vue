@@ -24,7 +24,11 @@
             Species
             <span v-if="sortKey === 'species'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
-          <th class="text-end" @click="setSort('trektellenCount')" style="cursor: pointer">
+          <th
+            class="text-end equal-width-col"
+            @click="setSort('trektellenCount')"
+            style="cursor: pointer"
+          >
             <img
               src="/trektellen_logo.png"
               alt="Défilé de l'Ecluse"
@@ -33,27 +37,39 @@
             Counted
             <span v-if="sortKey === 'trektellenCount'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
-          <th class="text-end" @click="setSort('totalPredicted')" style="cursor: pointer">
+          <th
+            class="text-end equal-width-col"
+            @click="setSort('totalPredicted')"
+            style="cursor: pointer"
+          >
             Predicted
             <span v-if="sortKey === 'totalPredicted'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
-          <th class="text-end" @click="setSort('totalQuantile')" style="cursor: pointer">
-            Quantile
-            <span v-if="sortKey === 'totalQuantile'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
-          </th>
-          <th class="text-end" @click="setSort('totalMedian')" style="cursor: pointer">
+          <th
+            class="text-end equal-width-col"
+            @click="setSort('totalMedian')"
+            style="cursor: pointer"
+          >
             Historical Median
             <span v-if="sortKey === 'totalMedian'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
-          <th class="text-end" @click="setSort('totalFold')" style="cursor: pointer">
-            Fold
-            <span v-if="sortKey === 'totalFold'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
+          <th
+            class="text-end equal-width-col"
+            @click="setSort('totalQuantile')"
+            style="cursor: pointer"
+          >
+            Quantile
+            <span v-if="sortKey === 'totalQuantile'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="row in sortedspecies" :key="row?.species">
-          <td>{{ row?.species }}</td>
+          <td>
+            <a :href="`#${row?.species}`" class="text-decoration-none text-dark">
+              {{ row?.species }}
+            </a>
+          </td>
           <td class="text-end">
             {{ row.trektellenCount != null ? row.trektellenCount : "-" }}
           </td>
@@ -61,23 +77,13 @@
             {{ row?.forecast?.predTotal != null ? Math.round(row.forecast.predTotal) : "-" }}
           </td>
           <td class="text-end">
-            {{
-              row?.forecast?.predTotalQuantile != null
-                ? Math.round(row.forecast.predTotalQuantile)
-                : "-"
-            }}
-          </td>
-          <td class="text-end">
             {{ row?.totalMedian !== null ? Math.round(row?.totalMedian) : "-" }}
           </td>
           <td class="text-end">
-            <template v-if="row?.forecast?.totalFold > 1"
-              >x{{ row?.forecast?.totalFold.toFixed(1) }}</template
-            >
-            <template v-else-if="row?.forecast?.totalFold > 0"
-              >/{{ (1 / row?.forecast?.totalFold).toFixed(1) }}</template
-            >
-            <template v-else>-</template>
+            <span v-if="row?.forecast?.predTotalQuantile != null">
+              {{ Math.round(row.forecast.predTotalQuantile) }}<sup>th</sup>
+            </span>
+            <span v-else>-</span>
           </td>
         </tr>
       </tbody>
@@ -98,8 +104,7 @@ const popoverContent = `<b>Species</b>: Bird species name.<br>
    <b>Trektellen</b>: Observed total so far species (live data if available).<br>
    <b>Predicted species</b>: Predicted total number of individuals expected species (from 6am to 7pm).<br>
    <b>Quantile</b>: How species's prediction compares to past years (e.g., 90th means higher than 90% of previous years for this date).<br>
-   <b>Historical Median</b>: Typical (median) count for this date in past years.<br>
-   <b>Fold</b>: How many times higher (or lower) species's prediction is compared to the historical median (e.g., x2.0 means double, /2.0 means half).`;
+   <b>Historical Median</b>: Typical (median) count for this date in past years.`;
 onMounted(() => {
   if (infoBtn.value) {
     new Popover(infoBtn.value);
@@ -132,19 +137,12 @@ const enrichedspecies = computed(() =>
       r.historical?.median !== undefined ? r.historical.median * hours : undefined;
     const totalQuantile =
       forecast && forecast.predTotalQuantile !== undefined ? forecast.predTotalQuantile : undefined;
-    const totalFold =
-      forecast && forecast.predTotalFold !== undefined
-        ? forecast.predTotalFold
-        : totalPredicted && totalMedian
-        ? totalPredicted / totalMedian
-        : undefined;
     const trektellenCount = r.trektellen?.count ?? null; // added
     return {
       ...r,
       totalPredicted,
       totalMedian,
       totalQuantile,
-      totalFold,
       trektellenCount,
     };
   })
@@ -171,5 +169,19 @@ const sortedspecies = computed(() => {
 .popover {
   min-width: 320px;
   max-width: 400px;
+}
+
+.equal-width-col {
+  width: 20%; /* 4 columns = 25% each, but leaving some space for borders/padding */
+}
+
+/* Style for species name links */
+td a {
+  transition: color 0.2s ease;
+}
+
+td a:hover {
+  color: var(--bs-primary) !important;
+  text-decoration: underline !important;
 }
 </style>

@@ -2,23 +2,31 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="text-muted mb-0">Today...</h6>
-      <div class="d-flex gap-3">
+      <div class="d-flex gap-2">
         <span v-if="props.forecast">
           <span
             :style="{ color: predSignificance.color }"
             data-bs-toggle="tooltip"
+            data-bs-html="true"
             :data-bs-title="predSignificance.explanation"
           >
-            {{ Math.round(totalPredicted) }} predicted
+            {{
+              props.forecast.predTotal >= 1
+                ? Math.round(props.forecast.predTotal)
+                : props.forecast.predTotal.toFixed(1)
+            }}
+            predicted
           </span>
         </span>
+        /
         <span
-          v-if="props.trektellen && totalObserved > 0"
+          v-if="props.trektellen && props.trektellen.count > 0"
           :style="{ color: observedSignificance.color }"
           data-bs-toggle="tooltip"
+          data-bs-html="true"
           :data-bs-title="observedSignificance.explanation"
         >
-          {{ totalObserved }} observed
+          {{ props.trektellen.count }} observed
         </span>
       </div>
     </div>
@@ -28,15 +36,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed } from "vue";
+import { ref, onMounted, watch, nextTick, computed, inject } from "vue";
 import Plotly from "plotly.js-dist-min";
 import { Tooltip } from "bootstrap";
+import { createHistoricalLineTrace } from "../utils/stats";
 
 const props = defineProps({
   historical: { type: Object, required: true },
   forecast: { type: Object, required: false },
   trektellen: { type: Object, required: false },
 });
+
+const ID_MEDIAN = inject("ID_MEDIAN");
+const ID_LOWER = inject("ID_LOWER");
+const ID_UPPER = inject("ID_UPPER");
 
 const plotDiv = ref(null);
 
@@ -60,54 +73,71 @@ async function createPlot() {
 
   // 1. HISTORICAL DATA FIRST (always available - base layer)
 
-  // Grey band between Q25 and Q75
-  const y25 =
-    historical?.q25 != null ? ratio.map((r) => (r == null ? 1 : r) * Number(historical.q25)) : null;
-  const y75 =
-    historical?.q75 != null ? ratio.map((r) => (r == null ? 1 : r) * Number(historical.q75)) : null;
-  if (y25 && y75) {
-    // Lower bound (invisible) to anchor the fill
-    allTraces.push({
-      x: xHours,
-      y: y25,
-      type: "scatter",
-      mode: "lines",
-      line: { width: 0 },
-      hoverinfo: "skip",
-      showlegend: false,
-    });
-    // Upper bound with fill to previous
-    allTraces.push({
-      x: xHours,
-      y: y75,
-      type: "scatter",
-      mode: "lines",
-      line: { width: 0 },
-      fill: "tonexty",
-      fillcolor: "rgba(128,128,128,0.25)",
-      hoverinfo: "skip",
-      name: "Q25–Q75",
-      showlegend: false,
-    });
+  // Grey band between lower and upper
+  const lower =
+    historical?.quantiles != null
+      ? ratio.map((r) => (r == null ? 1 : r) * historical.quantiles[ID_LOWER])
+      : null;
+  const upper =
+    historical?.quantiles != null
+      ? ratio.map((r) => (r == null ? 1 : r) * historical.quantiles[ID_UPPER])
+      : null;
+  if (historical?.quantiles != null && ID_LOWER != null && ID_UPPER != null) {
+    // Create smooth lower and upper bounds
+    const lowerTrace = createHistoricalLineTrace(
+      xHours,
+      ratio,
+      historical.quantiles[ID_LOWER],
+      "transparent",
+      "solid",
+      "",
+      true
+    );
+    const upperTrace = createHistoricalLineTrace(
+      xHours,
+      ratio,
+      historical.quantiles[ID_UPPER],
+      "transparent",
+      "solid",
+      "",
+      true
+    );
+
+    if (lowerTrace && upperTrace) {
+      // Lower bound (invisible) to anchor the fill
+      allTraces.push({
+        ...lowerTrace,
+        line: { ...lowerTrace.line, width: 0 },
+        hoverinfo: "skip",
+        showlegend: false,
+        name: undefined,
+        hovertemplate: undefined,
+      });
+
+      // Upper bound with fill to previous
+      allTraces.push({
+        ...upperTrace,
+        line: { ...upperTrace.line, width: 0 },
+        fill: "tonexty",
+        fillcolor: "rgba(128,128,128,0.25)",
+        hoverinfo: "skip",
+        name: "lower–upper",
+        showlegend: false,
+        hovertemplate: undefined,
+      });
+    }
   }
 
-  // Helper to build a per-hour historical line using base * ratio[hour]
-  function makeHistoryLine(base, color, dash, label) {
-    if (base == null || Number.isNaN(base)) return null;
-    const y = ratio.map((r) => (r == null ? 1 : r) * base);
-    return {
-      x: xHours,
-      y,
-      type: "scatter",
-      mode: "lines",
-      line: { color, width: 2, dash },
-      name: `${label} (${Number(base).toFixed(1)})`,
-      hovertemplate: `${label}: %{y:.1f}<extra></extra>`,
-    };
-  }
-
-  // Median as a black line
-  const medianTrace = makeHistoryLine(historical.median, "black", "solid", "Median");
+  // Median as a smooth black line
+  const medianTrace = createHistoricalLineTrace(
+    xHours,
+    ratio,
+    historical.median,
+    "black",
+    "solid",
+    "Median",
+    true
+  );
   if (medianTrace) allTraces.push(medianTrace);
 
   // 2. FORECAST BARS (when available - middle layer)
@@ -172,19 +202,6 @@ async function createPlot() {
     }
   }
 
-  function makeHistoryLine(base, color, dash, label) {
-    if (base == null || Number.isNaN(base)) return null;
-    const y = ratio.map((r) => (r == null ? 1 : r) * base);
-    return {
-      x: xHours,
-      y,
-      type: "scatter",
-      mode: "lines",
-      line: { color, width: 2, dash },
-      name: `${label} (${Number(base).toFixed(1)})`,
-      hovertemplate: `${label}: %{y:.1f}<extra></extra>`,
-    };
-  }
   const layout = {
     xaxis: {
       title: "Hour",
@@ -218,70 +235,56 @@ async function createPlot() {
   }
 }
 
-const totalPredicted = computed(() => {
-  const f = props.forecast;
-  if (!f) return 0;
-  if (typeof f.predTotal === "number") return f.predTotal;
-  const arr = Array.isArray(f?.predHourlyCount) ? f.predHourlyCount : Array.isArray(f) ? f : [];
-  return arr.reduce((s, v) => s + (Number(v) || 0), 0);
-});
-
-const totalHistoricalMedian = computed(() => props.historical?.median ?? 0);
-
-const totalObserved = computed(() => {
-  if (!props.trektellen?.observations) return 0;
-  return props.trektellen.observations.reduce((sum, obs) => {
-    return sum + (parseInt(obs.left, 10) || 0);
-  }, 0);
-});
-
-function getSignificance(value, historicalMedian, type = "predicted", quantile = null) {
-  const diff = value - historicalMedian;
+function getSignificance(quantile) {
   let color = "black";
-  let explanation = `Black: ${type} is less than 50% of historical.`;
+  let explanation = "";
 
-  if (diff < 5) {
-    color = "black";
-    explanation = `Difference with historical is less than 5 birds.`;
+  const percentile = Math.round(quantile);
+
+  if (quantile >= 0.9) {
+    color = "red";
+    explanation = `Exceptionally high compared to historical years (${percentile}<sup>th</sup> percentile).`;
+  } else if (quantile >= 0.8) {
+    color = "orange";
+    explanation = `Notably high compared to historical years (${percentile}<sup>th</sup> percentile).`;
+  } else if (quantile >= 0.5) {
+    color = "green";
+    explanation = `Above average compared to historical years (${percentile}<sup>th</sup> percentile).`;
   } else {
-    // For predictions, use quantile if available, otherwise calculate ratio
-    const ratio = quantile || (historicalMedian > 0 ? value / historicalMedian : 0);
-
-    if (ratio > 0.9) {
-      color = "red";
-      explanation = `Red: ${type} is more than 90% of historical.`;
-    } else if (ratio > 0.8) {
-      color = "orange";
-      explanation = `Orange: ${type} is more than 80% of historical.`;
-    } else if (ratio >= 0.5) {
-      color = "green";
-      explanation = `Green: ${type} is more than 50% of historical.`;
-    }
+    color = "black";
+    explanation = `Below average compared to historical years (${percentile}<sup>th</sup> percentile).`;
   }
+
   return { color, explanation };
 }
 
 const predSignificance = computed(() => {
-  return getSignificance(
-    totalPredicted.value,
-    props.historical?.median ?? 0,
-    "Predicted",
-    props.forecast?.predTotalQuantile
-  );
+  return getSignificance(props.forecast?.predTotalQuantile);
 });
 
 const observedSignificance = computed(() => {
-  return getSignificance(totalObserved.value, props.historical?.median ?? 0, "Observed");
+  return getSignificance(props.trektellen?.totalQuantile);
 });
+
+function initializeTooltips() {
+  nextTick(() => {
+    // Initialize all tooltips in the component
+    const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipElements.forEach((el) => {
+      // Dispose existing tooltip if any
+      const existingTooltip = Tooltip.getInstance(el);
+      if (existingTooltip) {
+        existingTooltip.dispose();
+      }
+      // Create new tooltip
+      new Tooltip(el);
+    });
+  });
+}
 
 onMounted(() => {
   createPlot();
-  nextTick(() => {
-    const el = plotDiv.value?.parentElement?.querySelector('[data-bs-toggle="tooltip"]');
-    if (el) {
-      new Tooltip(el);
-    }
-  });
+  initializeTooltips();
 });
 
 watch(
@@ -290,10 +293,7 @@ watch(
     // Create plot when we have historical data (with or without forecast)
     if (props.historical) {
       createPlot();
-      nextTick(() => {
-        const el = plotDiv.value?.parentElement?.querySelector('[data-bs-toggle="tooltip"]');
-        if (el) new Tooltip(el);
-      });
+      initializeTooltips();
     }
   },
   { deep: true }
