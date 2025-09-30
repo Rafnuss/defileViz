@@ -67,7 +67,15 @@
         <tr v-for="row in sortedspecies" :key="row?.species">
           <td>
             <a :href="`#${row?.species}`" class="text-decoration-none text-dark">
-              {{ row?.species }}
+              <img
+                :src="`/defileViz/species_icon/${row.species
+                  .toLowerCase()
+                  .replace(/\s+/g, '_')}.svg`"
+                :alt="row.species + ' icon'"
+                style="height: 26px; width: 26px; margin-right: 8px; flex-shrink: 0"
+                @error="$event.target.style.display = 'none'"
+              />
+              {{ t(`species.${row?.species}`, row?.species) }}
             </a>
           </td>
           <td class="text-end">

@@ -200,7 +200,17 @@
             @click="sp.collapsed = !sp.collapsed"
             style="cursor: pointer"
           >
-            <h5 class="card-title my-0" :id="sp.species">{{ sp.species }}</h5>
+            <h5 class="card-title my-0 d-flex align-items-center" :id="sp.species">
+              <img
+                :src="`/defileViz/species_icon/${sp.species
+                  .toLowerCase()
+                  .replace(/\s+/g, '_')}.svg`"
+                :alt="sp.species + ' icon'"
+                style="height: 26px; width: 26px; margin-right: 8px; flex-shrink: 0"
+                @error="$event.target.style.display = 'none'"
+              />
+              {{ sp.species }}
+            </h5>
             <button
               class="btn btn-sm btn-outline-secondary"
               type="button"
