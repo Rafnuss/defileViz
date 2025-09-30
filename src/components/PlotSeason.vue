@@ -119,7 +119,7 @@ async function createPlot() {
   });
 
   // Add predicted total as blue dot
-  if (props.totalPredicted != null) {
+  if (props.totalPredicted != null && props.totalPredicted > 0) {
     traces.push({
       x: [todayDoy],
       y: [props.totalPredicted],
@@ -133,11 +133,12 @@ async function createPlot() {
       },
       name: "Predicted Total",
       hovertemplate: "Predicted: %{y:.1f}<extra></extra>",
+      showlegend: true,
     });
   }
 
   // Add observed total as red dot
-  if (props.totalObserved > 0) {
+  if (props.totalObserved != null && props.totalObserved > 0) {
     traces.push({
       x: [todayDoy],
       y: [props.totalObserved],
@@ -151,6 +152,7 @@ async function createPlot() {
       },
       name: "Observed Total",
       hovertemplate: "Observed: %{y:.1f}<extra></extra>",
+      showlegend: true,
     });
   }
 
@@ -163,11 +165,22 @@ async function createPlot() {
       ticktext: monthLabels,
     },
     yaxis: {
-      title: "Daily Count Total",
+      title: "Daily Count",
       fixedrange: true,
+      range: [Math.max(0, minY * 0.9), maxY * 1.1], // Add some padding and ensure minimum of 0
     },
-    margin: { t: 0, l: 20, r: 0, b: 20 },
-    showlegend: false,
+    margin: { t: 0, l: 40, r: 0, b: 20 },
+    showlegend: true,
+    legend: {
+      x: 0.5,
+      y: 1,
+      xanchor: "center",
+      yanchor: "top",
+      bgcolor: "rgba(255, 255, 255, 0.8)",
+      bordercolor: "rgba(0, 0, 0, 0.2)",
+      borderwidth: 1,
+      orientation: "h",
+    },
     dragmode: false,
     autosize: true,
   };
@@ -181,7 +194,6 @@ async function createPlot() {
       staticPlot: false,
       responsive: true,
     });
-    //console.log("Plot created successfully");
   } catch (error) {
     console.error("Error creating plot:", error);
   }
@@ -189,6 +201,9 @@ async function createPlot() {
 
 onMounted(createPlot);
 watch(() => props.season, createPlot, { deep: true });
+watch(() => props.totalPredicted, createPlot);
+watch(() => props.totalObserved, createPlot);
+watch(() => props.date, createPlot);
 </script>
 
 <style scoped>
