@@ -136,8 +136,8 @@
           <li class="nav-item">
             <button
               class="nav-link btn btn-link text-white p-0 border-0 d-flex align-items-center justify-content-center justify-content-lg-start"
-              @click="showSettings = true"
-              title="Settings"
+              data-bs-toggle="modal"
+              data-bs-target="#settingsModal"
             >
               <i class="bi bi-gear" style="font-size: 1.5rem"></i>
               <span class="d-lg-none ms-2">Settings</span>
@@ -264,11 +264,10 @@
   <!-- Settings Modal -->
   <div
     class="modal fade"
-    :class="{ show: showSettings }"
     tabindex="-1"
-    style="display: block"
-    v-if="showSettings"
-    @click.self="showSettings = false"
+    id="settingsModal"
+    aria-labelledby="exampleModalLabel"
+    aria-hidden="true"
   >
     <div class="modal-dialog">
       <div class="modal-content">
@@ -414,7 +413,6 @@ const plotOptions = ref([
   { name: "nextDays", label: "Next Days", show: true },
   { name: "season", label: "Season", show: true },
 ]);
-const showSettings = ref(false);
 const showIntro = ref(true);
 
 // Settings
