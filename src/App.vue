@@ -337,7 +337,7 @@
 // Vue imports
 import { ref, computed, watch, onMounted, provide } from "vue";
 import { useI18n } from "vue-i18n";
-import { LANGUAGE_OPTIONS, initializeLocale } from "./i18n";
+import { LANGUAGE_OPTIONS, updateLocale } from "./i18n";
 
 // Species data
 import species_doy_statistics0 from "../src/species_doy_statistics.json";
@@ -597,11 +597,6 @@ function toggleAllSpecies() {
 
 // Lifecycle hooks
 onMounted(() => {
-  // Initialize locale properly after DOM is ready
-  const initializedLocale = initializeLocale();
-  locale.value = initializedLocale;
-  localStorage.setItem("defile-locale", initializedLocale);
-
   updateSpeciesData(selectedDate.value);
 
   // Handle browser back/forward navigation
@@ -628,7 +623,7 @@ watch(selectedDate, (newDate) => {
 
 watch(locale, (newLocale) => {
   console.log("Locale changed to", newLocale);
-  localStorage.setItem("defile-locale", newLocale);
+  updateLocale(newLocale);
 });
 </script>
 

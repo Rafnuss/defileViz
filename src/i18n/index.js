@@ -309,19 +309,11 @@ const messages = {
   },
 };
 
-// Create i18n instance with smart defaults
-const i18n = createI18n({
-  locale: "en", // Start with English as safe default
-  fallbackLocale: "en",
-  messages,
-  legacy: false, // Use Composition API mode
-});
-
 /**
  * Initialize locale using modern browser APIs and localStorage
  * @returns {string} - The initialized locale (en, fr, de)
  */
-export const initializeLocale = () => {
+const initializeLocale = () => {
   const supportedLocales = LANGUAGE_OPTIONS.map((lang) => lang.code);
   let initialLocale = "en";
 
@@ -360,8 +352,35 @@ export const initializeLocale = () => {
   }
 
   console.log("Initializing locale to:", initialLocale);
-  i18n.global.locale.value = initialLocale;
   return initialLocale;
+};
+
+// Initialize the locale immediately
+const initialLocale = initializeLocale();
+
+// Create i18n instance with the detected locale
+const i18n = createI18n({
+  locale: initialLocale,
+  fallbackLocale: "en",
+  messages,
+  legacy: false, // Use Composition API mode
+});
+
+/**
+ * Update locale and save to localStorage
+ * @param {string} newLocale - The new locale to set
+ */
+export const updateLocale = (newLocale) => {
+  const supportedLocales = LANGUAGE_OPTIONS.map((lang) => lang.code);
+  if (supportedLocales.includes(newLocale)) {
+    i18n.global.locale.value = newLocale;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("defile-locale", newLocale);
+    }
+    console.log("Updated locale to:", newLocale);
+  } else {
+    console.warn("Unsupported locale:", newLocale);
+  }
 };
 
 export default i18n;
