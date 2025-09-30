@@ -8,7 +8,7 @@
           alt="Défilé de l'Ecluse"
           style="height: 36px; width: auto; margin-right: 10px"
         />
-        Defile Bird Forecasts
+        {{ $t("nav.title") }}
       </a>
 
       <!-- Date selector (desktop: center, mobile: below brand) -->
@@ -17,7 +17,7 @@
           class="btn btn-outline-light btn-sm me-2"
           @click="changeDateByDays(-1)"
           :disabled="isLoadingData"
-          title="Previous day"
+          :title="$t('common.previousDay')"
         >
           <i class="bi bi-chevron-left"></i>
         </button>
@@ -34,7 +34,7 @@
           class="btn btn-outline-light btn-sm ms-2"
           @click="changeDateByDays(1)"
           :disabled="isLoadingData"
-          title="Next day"
+          :title="$t('common.nextDay')"
         >
           <i class="bi bi-chevron-right"></i>
         </button>
@@ -100,14 +100,25 @@
               v-show="isLoadingData"
               class="spinner-border spinner-border-sm text-light"
               role="status"
-            >
-              <span class="visually-hidden">Loading...</span>
-            </div>
+            ></div>
           </div>
         </div>
 
         <!-- Navigation links -->
         <ul class="navbar-nav ms-auto align-items-lg-center text-center">
+          <!-- Language Switcher -->
+          <li class="nav-item">
+            <div class="d-flex align-items-center">
+              <select
+                v-model="locale"
+                class="form-select form-select-sm bg-primary text-white border-light"
+              >
+                <option v-for="lang in LANGUAGE_OPTIONS" :key="lang.code" :value="lang.code">
+                  {{ lang.flag }} {{ lang.shortName }}
+                </option>
+              </select>
+            </div>
+          </li>
           <li class="nav-item">
             <a
               href="https://github.com/AmedeeRoy/defile-migration-forecast"
@@ -121,7 +132,7 @@
           </li>
           <li class="nav-item">
             <a
-              :href="trektellenURL"
+              :href="`https://www.trektellen.org/count/view/2422/${selectedDate.replace(/-/g, '')}`"
               target="_blank"
               class="nav-link d-flex align-items-center justify-content-center justify-content-lg-start"
             >
@@ -130,7 +141,7 @@
                 alt="Défilé de l'Ecluse"
                 style="height: 24px; width: auto"
               />
-              <span class="ms-2">Trektellen</span>
+              <span class="ms-2">Trektellens</span>
             </a>
           </li>
           <li class="nav-item">
@@ -140,7 +151,7 @@
               data-bs-target="#settingsModal"
             >
               <i class="bi bi-gear" style="font-size: 1.5rem"></i>
-              <span class="d-lg-none ms-2">Settings</span>
+              <span class="d-lg-none ms-2">{{ $t("nav.settings") }}</span>
             </button>
           </li>
         </ul>
@@ -149,31 +160,8 @@
   </nav>
 
   <div class="container">
-    <h1>Welcome to Defile Bird Forecasts</h1>
-    <div v-if="showIntro" class="alert alert-info alert-dismissible" role="alert">
-      <button type="button" class="btn-close" aria-label="Close" @click="showIntro = false" />
-      <span>
-        This website provides a daily migration forecasts for the count of raptor species at the
-        Défilé de l'Ecluse, based on a
-        <a
-          href="https://github.com/AmedeeRoy/defile-migration-forecast"
-          target="_blank"
-          rel="noopener"
-          >neural network model</a
-        >.<br />
-        Check out the actual count on
-        <a href="https://www.trektellen.org/count/view/2422/" target="_blank" rel="noopener"
-          >Trektellen</a
-        >
-        and read more about this history of this project (in French) on the website of
-        <a
-          href="https://auvergne-rhone-alpes.lpo.fr/projets/migration-post-nuptiale-au-defile-de-lecluse/"
-          target="_blank"
-          rel="noopener"
-          >LPO Auvergne-Rhône-Alpes</a
-        >.
-      </span>
-    </div>
+    <IntroSection />
+
     <TodayTable
       v-if="species && species.length > 0"
       :species="
@@ -186,10 +174,10 @@
       "
     />
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="mb-0">Hourly Prediction</h2>
+      <h2 class="mb-0">{{ $t("plots.hourlyPrediction") }}</h2>
       <button class="btn btn-outline-secondary btn-sm" @click="toggleAllSpecies" type="button">
         <i :class="allCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
-        {{ allCollapsed ? "Expand All" : "Collapse All" }}
+        {{ allCollapsed ? $t("plots.expandAll") : $t("plots.collapseAll") }}
       </button>
     </div>
     <div class="row">
@@ -209,7 +197,7 @@
                 style="height: 26px; width: 26px; margin-right: 8px; flex-shrink: 0"
                 @error="$event.target.style.display = 'none'"
               />
-              {{ sp.species }}
+              {{ $t(`species.${sp.species}`, sp.species) }}
             </h5>
             <button
               class="btn btn-sm btn-outline-secondary"
@@ -249,6 +237,7 @@
                   :date="sp.date[0]"
                   :totalPredicted="sp.forecast[0]?.predTotal"
                   :totalObserved="sp.trektellen?.count"
+                  :speciesName="sp.species"
                 />
               </div>
             </div>
@@ -346,10 +335,15 @@
 
 <script setup>
 // Vue imports
-import { ref, watch, onMounted, computed, provide } from "vue";
+import { ref, computed, watch, onMounted, provide } from "vue";
+import { useI18n } from "vue-i18n";
+import { LANGUAGE_OPTIONS, initializeLocale } from "./i18n";
 
 // Species data
-import species_doy_statistics from "../src/species_doy_statistics.json";
+import species_doy_statistics0 from "../src/species_doy_statistics.json";
+const species_doy_statistics = species_doy_statistics0.filter(
+  (sp) => !sp.species.includes(["Merlin"])
+);
 
 // Stats functions
 import { predictQuantile } from "./utils/stats";
@@ -364,28 +358,8 @@ import PlotNextDays from "./components/PlotNextDays.vue";
 import PlotSeason from "./components/PlotSeason.vue";
 import TodayTable from "./components/TodayTable.vue";
 import PlotWeather from "./components/PlotWeather.vue";
+import IntroSection from "./components/IntroSection.vue";
 import Footer from "./components/Footer.vue";
-
-/**
- * Gets date from URL or defaults to today, validates it's not in future
- * @returns {string} Valid date string in YYYY-MM-DD format
- */
-function getDateFromURL() {
-  const dateParam = new URLSearchParams(window.location.search).get("date");
-  const today = new Date().toISOString().split("T")[0];
-
-  // Return URL date if valid and not in future, otherwise today
-  return dateParam && dateParam <= today && !isNaN(new Date(dateParam)) ? dateParam : today;
-}
-
-/**
- * Updates URL and browser history with current date
- */
-function updateURL(dateStr) {
-  const url = new URL(window.location);
-  url.searchParams.set("date", dateStr);
-  window.history.pushState({ date: dateStr }, "", url);
-}
 
 // Constants
 const N_HOURS = 12;
@@ -401,10 +375,13 @@ provide("ID_MEDIAN", ID_MEDIAN);
 provide("ID_LOWER", ID_LOWER);
 provide("ID_UPPER", ID_UPPER);
 
+// i18n setup
+const { locale } = useI18n();
+
 // Reactive data
 const species = ref([]);
 const weather = ref(null);
-const selectedDate = ref(getDateFromURL());
+const selectedDate = ref(new Date().toISOString().split("T")[0]);
 const isLoadingData = ref(false);
 
 // UI state
@@ -413,7 +390,6 @@ const plotOptions = ref([
   { name: "nextDays", label: "Next Days", show: true },
   { name: "season", label: "Season", show: true },
 ]);
-const showIntro = ref(true);
 
 // Settings
 const medianThreshold = ref(0);
@@ -423,9 +399,6 @@ const sortOption = ref("taxonomy");
 // Computed properties
 const todaysDate = computed(() => new Date().toISOString().split("T")[0]);
 const isToday = computed(() => selectedDate.value === todaysDate.value);
-const trektellenURL = computed(
-  () => `https://www.trektellen.org/count/view/2422/${selectedDate.value.replace(/-/g, "")}`
-);
 
 const speciesDisplay = computed(() => {
   const filtered = species.value.filter(
@@ -624,18 +597,38 @@ function toggleAllSpecies() {
 
 // Lifecycle hooks
 onMounted(() => {
+  // Initialize locale properly after DOM is ready
+  const initializedLocale = initializeLocale();
+  locale.value = initializedLocale;
+  localStorage.setItem("defile-locale", initializedLocale);
+
   updateSpeciesData(selectedDate.value);
 
   // Handle browser back/forward navigation
   window.addEventListener("popstate", () => {
-    selectedDate.value = getDateFromURL();
+    const dateParam = new URLSearchParams(window.location.search).get("date");
+    const today = new Date().toISOString().split("T")[0];
+
+    // Return URL date if valid and not in future, otherwise today
+    selectedDate.value =
+      dateParam && dateParam <= today && !isNaN(new Date(dateParam)) ? dateParam : today;
+
+    console.log("Popstate event: date set to", selectedDate.value);
   });
 });
 
 // Watchers
 watch(selectedDate, (newDate) => {
+  console.log("Selected date changed to", newDate);
   updateSpeciesData(newDate);
-  updateURL(newDate);
+  const url = new URL(window.location);
+  url.searchParams.set("date", newDate);
+  window.history.pushState({ date: newDate }, "", url);
+});
+
+watch(locale, (newLocale) => {
+  console.log("Locale changed to", newLocale);
+  localStorage.setItem("defile-locale", newLocale);
 });
 </script>
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="text-muted mb-0">Today...</h6>
+      <h6 class="text-muted mb-0">{{ $t("plots.today") }}...</h6>
       <div class="d-flex gap-2">
         <span v-if="props.forecast">
           <span
@@ -15,7 +15,7 @@
                 ? Math.round(props.forecast.predTotal)
                 : props.forecast.predTotal.toFixed(1)
             }}
-            predicted
+            {{ $t("table.predicted").toLowerCase() }}
           </span>
         </span>
         /
@@ -26,7 +26,7 @@
           data-bs-html="true"
           :data-bs-title="observedSignificance.explanation"
         >
-          {{ props.trektellen.count }} observed
+          {{ props.trektellen.count }} {{ $t("table.counted").toLowerCase() }}
         </span>
       </div>
     </div>
@@ -37,9 +37,12 @@
 
 <script setup>
 import { ref, onMounted, watch, nextTick, computed, inject } from "vue";
+import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-dist-min";
 import { Tooltip } from "bootstrap";
 import { createHistoricalLineTrace } from "../utils/stats";
+
+const { t } = useI18n();
 
 const props = defineProps({
   historical: { type: Object, required: true },
@@ -135,7 +138,7 @@ async function createPlot() {
     historical.median,
     "black",
     "solid",
-    "Median",
+    t("plots.median"),
     true
   );
   if (medianTrace) allTraces.push(medianTrace);
@@ -149,9 +152,9 @@ async function createPlot() {
       text: predCount.map((v) => v.toFixed(1)),
       textposition: "auto",
       customdata: Array.from({ length: predCount.length }, (_, i) => `${i}h-${i + 1}h`),
-      hovertemplate: "%{customdata}<br>Forecast: %{y:.0f}<extra></extra>",
+      hovertemplate: `%{customdata}<br>${t("plots.forecast")}: %{y:.0f}<extra></extra>`,
       width: 1,
-      name: "Forecast",
+      name: t("plots.forecast"),
       marker: { color: "rgba(31, 119, 180, 0.7)" }, // Blue color with transparency
     };
     allTraces.push(forecastTrace);
@@ -194,9 +197,11 @@ async function createPlot() {
           symbol: "circle",
           line: { color: "rgba(220, 53, 69, 1)", width: 2 },
         },
-        name: "Trektellen Observations",
+        name: t("plots.trektellenObservations"),
         customdata: trektellenData.map((d) => `${d.hour}h-${d.hour + 1}h`),
-        hovertemplate: "%{customdata}<br>Observed: %{y} birds<extra></extra>",
+        hovertemplate: `%{customdata}<br>${t("table.counted")}: %{y} ${t(
+          "plots.birds"
+        )}<extra></extra>`,
       };
       allTraces.push(trektellenTrace);
     }
@@ -204,14 +209,14 @@ async function createPlot() {
 
   const layout = {
     xaxis: {
-      title: "Hour",
+      title: t("plots.hour"),
       tickvals: [0, 3, 6, 9, 12, 15, 18, 21],
       ticktext: ["0h", "3h", "6h", "9h", "12h", "15h", "18h", "21h"],
       range: [6, 18],
       fixedrange: true,
     },
     yaxis: {
-      title: forecast ? "Forecasted individual counts (#)" : "Historical counts (#)",
+      title: forecast ? t("plots.forecastedCounts") : t("plots.historicalCounts"),
       fixedrange: true,
       rangemode: "tozero",
     },

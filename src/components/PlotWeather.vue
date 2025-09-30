@@ -1,9 +1,9 @@
 <template>
-  <h2>Weather Forecast</h2>
+  <h2>{{ $t("weather.title") }}</h2>
   <div class="card mb-4">
     <div class="card-header d-flex flex-wrap gap-3 align-items-center">
       <label class="form-label mb-0 small d-inline-flex align-items-center gap-1">
-        <span>Variable:</span>
+        <span>{{ $t("weather.variable") }}</span>
         <select v-model="selectedVar" class="form-select form-select-sm w-auto">
           <option v-for="v in variableList" :key="v" :value="v">
             {{ weatherMeta[v]?.label || v }}
@@ -22,7 +22,7 @@
         <i class="bi bi-info-circle" style="font-size: 1rem"></i>
       </a>
       <label class="form-label mb-0 small d-inline-flex align-items-center gap-1">
-        <span>Days:</span>
+        <span>{{ $t("weather.days") }}</span>
         <input
           type="number"
           class="form-control form-control-sm w-auto"
@@ -40,7 +40,10 @@
 
 <script setup>
 import { ref, watch, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-dist-min";
+
+const { t } = useI18n();
 
 const props = defineProps({
   weather: { type: Object, required: true },

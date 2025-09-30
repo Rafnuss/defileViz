@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex align-items-center mb-3">
-    <h2 class="mb-0 me-2">Today's Predictions by Species</h2>
+    <h2 class="mb-0 me-2">{{ $t("table.title") }}</h2>
     <button
       ref="infoBtn"
       type="button"
@@ -10,7 +10,7 @@
       data-bs-trigger="focus"
       data-bs-html="true"
       :data-bs-content="popoverContent"
-      title="Table columns explained"
+      :title="$t('table.explanation.title')"
       style="font-size: 1.5rem; line-height: 1"
     >
       <i class="bi bi-info-circle"></i>
@@ -21,7 +21,7 @@
       <thead class="table-light">
         <tr>
           <th @click="setSort('species')" style="cursor: pointer">
-            Species
+            {{ $t("table.species") }}
             <span v-if="sortKey === 'species'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
           <th
@@ -34,7 +34,7 @@
               alt="Défilé de l'Ecluse"
               style="height: 24px; width: auto; display: inline-block; vertical-align: middle"
             />
-            Counted
+            {{ $t("table.counted") }}
             <span v-if="sortKey === 'trektellenCount'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
           <th
@@ -42,7 +42,7 @@
             @click="setSort('totalPredicted')"
             style="cursor: pointer"
           >
-            Predicted
+            {{ $t("table.predicted") }}
             <span v-if="sortKey === 'totalPredicted'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
           <th
@@ -50,7 +50,7 @@
             @click="setSort('totalMedian')"
             style="cursor: pointer"
           >
-            Historical Median
+            {{ $t("table.historical") }}
             <span v-if="sortKey === 'totalMedian'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
           <th
@@ -58,7 +58,7 @@
             @click="setSort('totalQuantile')"
             style="cursor: pointer"
           >
-            Quantile
+            {{ $t("table.quantile") }}
             <span v-if="sortKey === 'totalQuantile'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
         </tr>
@@ -101,18 +101,27 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { Popover } from "bootstrap";
+
+const { t } = useI18n();
+
 const props = defineProps({
   species: { type: Array, required: true },
 });
 const sortKey = ref("species");
 const sortOrder = ref("desc");
 const infoBtn = ref(null);
-const popoverContent = `<b>Species</b>: Bird species name.<br>
-   <b>Trektellen</b>: Observed total so far species (live data if available).<br>
-   <b>Predicted species</b>: Predicted total number of individuals expected species (from 6am to 7pm).<br>
-   <b>Quantile</b>: How species's prediction compares to past years (e.g., 90th means higher than 90% of previous years for this date).<br>
-   <b>Historical Median</b>: Typical (median) count for this date in past years.`;
+
+const popoverContent = computed(
+  () =>
+    `<b>${t("table.species")}</b>: ${t("table.explanation.species")}<br>
+   <b>${t("table.observed")}</b>: ${t("table.explanation.observed")}<br>
+   <b>${t("table.predicted")}</b>: ${t("table.explanation.predicted")}<br>
+   <b>${t("table.quantile")}</b>: ${t("table.explanation.quantile")}<br>
+   <b>${t("table.historical")}</b>: ${t("table.explanation.historicalMedian")}`
+);
+
 onMounted(() => {
   if (infoBtn.value) {
     new Popover(infoBtn.value);

@@ -1,24 +1,28 @@
 <template>
   <div>
-    <h6 class="text-muted mb-2">This season...</h6>
+    <h6 class="text-muted mb-2">{{ $t("plots.season") }}</h6>
     <div v-if="season?.doy">
       <div ref="plotDiv" class="plot-container"></div>
     </div>
     <div v-else>
-      <p>No forecast data available</p>
+      <p>{{ $t("plots.noForecastData") }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, nextTick, inject } from "vue";
+import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-dist-min";
+
+const { t } = useI18n();
 
 const props = defineProps({
   season: { type: Object, required: true },
   date: { type: [String, Date], required: false },
   totalPredicted: { type: Number, required: false },
   totalObserved: { type: Number, required: false },
+  speciesName: { type: String, required: false },
 });
 
 const ID_MEDIAN = inject("ID_MEDIAN");
@@ -78,7 +82,7 @@ async function createPlot() {
     fill: "toself",
     fillcolor: "rgba(128, 128, 128, 0.3)",
     line: { color: "transparent" },
-    name: "20-80% Quantile",
+    name: t("plots.quantileRange"),
     hoverinfo: "skip",
     showlegend: true,
   });
@@ -90,8 +94,8 @@ async function createPlot() {
     type: "scatter",
     mode: "lines",
     line: { color: "black", width: 2 },
-    name: "Median",
-    hovertemplate: "DOY: %{x}<br>Median: %{y:.2f}<extra></extra>",
+    name: t("plots.median"),
+    hovertemplate: `${t("plots.date")}: %{x}<br>${t("plots.median")}: %{y:.2f}<extra></extra>`,
   });
 
   // Today's vertical line
@@ -114,8 +118,8 @@ async function createPlot() {
     type: "scatter",
     mode: "lines",
     line: { color: "red", width: 2, dash: "dot" },
-    name: "Today",
-    hovertemplate: "Today<extra></extra>",
+    name: t("plots.today"),
+    hovertemplate: t("plots.today") + "<extra></extra>",
   });
 
   // Add predicted total as blue dot
@@ -131,8 +135,8 @@ async function createPlot() {
         symbol: "circle",
         line: { color: "rgba(31, 119, 180, 1)", width: 2 },
       },
-      name: "Predicted Total",
-      hovertemplate: "Predicted: %{y:.1f}<extra></extra>",
+      name: t("plots.predictedTotal"),
+      hovertemplate: `${t("plots.predictedTotal")}: %{y:.1f}<extra></extra>`,
       showlegend: true,
     });
   }
@@ -150,22 +154,24 @@ async function createPlot() {
         symbol: "circle",
         line: { color: "rgba(220, 53, 69, 1)", width: 2 },
       },
-      name: "Observed Total",
-      hovertemplate: "Observed: %{y:.1f}<extra></extra>",
+      name: t("plots.observedTotal"),
+      hovertemplate: `${t("plots.observedTotal")}: %{y:.1f}<extra></extra>`,
       showlegend: true,
     });
   }
 
   const layout = {
-    title: `Species (n=${totalObs})`,
+    title: props.speciesName
+      ? `${t(`species.${props.speciesName}`, props.speciesName)} (n=${totalObs})`
+      : `${t("plots.species")} (n=${totalObs})`,
     xaxis: {
-      title: "Date",
+      title: t("plots.date"),
       fixedrange: true,
       tickvals: monthTicks,
       ticktext: monthLabels,
     },
     yaxis: {
-      title: "Daily Count",
+      title: t("plots.dailyCount"),
       fixedrange: true,
       range: [Math.max(0, minY * 0.9), maxY * 1.1], // Add some padding and ensure minimum of 0
     },

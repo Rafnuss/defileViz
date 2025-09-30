@@ -1,14 +1,17 @@
 <template>
   <div>
-    <h6 class="text-muted mb-2">Next days...</h6>
+    <h6 class="text-muted mb-2">{{ $t("plots.nextDays") }}...</h6>
     <div ref="plotDiv" class="plot-container"></div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, nextTick, inject } from "vue";
+import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-dist-min";
 import { createHistoricalLineTrace } from "../utils/stats";
+
+const { t } = useI18n();
 
 const props = defineProps({
   historical: { type: Array, required: true },
@@ -67,9 +70,9 @@ async function createPlot() {
       x,
       y,
       type: "bar",
-      name: "Forecast",
+      name: t("plots.forecast"),
       customdata: custom,
-      hovertemplate: "%{customdata}<br>Count: %{y:.0f}<extra></extra>",
+      hovertemplate: `%{customdata}<br>${t("plots.dailyCount")}: %{y:.0f}<extra></extra>`,
       marker: { color: "#4e79a7" },
     });
   }
@@ -118,7 +121,7 @@ async function createPlot() {
           fill: "tonexty",
           fillcolor: "rgba(128,128,128,0.25)",
           hoverinfo: "skip",
-          name: d === 0 ? "Q20–Q80" : undefined,
+          name: d === 0 ? t("plots.quantileRange") : undefined,
           showlegend: false,
           hovertemplate: undefined,
         });
@@ -133,14 +136,14 @@ async function createPlot() {
         hist.median,
         "black",
         "solid",
-        "Median",
+        t("plots.median"),
         true
       );
 
       if (medianTrace) {
         traces.push({
           ...medianTrace,
-          name: d === 0 ? `Median (${Number(hist.median).toFixed(1)})` : undefined,
+          name: d === 0 ? `${t("plots.median")} (${Number(hist.median).toFixed(1)})` : undefined,
           showlegend: false,
         });
       }
@@ -158,14 +161,14 @@ async function createPlot() {
 
   const layout = {
     xaxis: {
-      title: "Future Days (hourly sequence)",
+      title: t("plots.futureDays"),
       tickvals,
       ticktext,
       fixedrange: true,
       showgrid: true,
     },
     yaxis: {
-      title: "Hourly forecast count",
+      title: t("plots.hourlyForecastCount"),
       fixedrange: true,
     },
     margin: { t: 0, l: 20, r: 0, b: 20 },
