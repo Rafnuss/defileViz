@@ -4,14 +4,13 @@
     <button
       ref="infoBtn"
       type="button"
-      class="btn btn-link p-0 text-info"
+      class="btn btn-link p-0 text-info fs-4 lh-1"
       tabindex="0"
       data-bs-toggle="popover"
       data-bs-trigger="focus"
       data-bs-html="true"
       :data-bs-content="popoverContent"
       :title="$t('table.explanation.title')"
-      style="font-size: 1.5rem; line-height: 1"
     >
       <i class="bi bi-info-circle"></i>
     </button>
@@ -32,7 +31,8 @@
             <img
               src="/trektellen_logo.png"
               alt="Défilé de l'Ecluse"
-              style="height: 24px; width: auto; display: inline-block; vertical-align: middle"
+              class="d-inline-block align-middle"
+              height="24"
             />
             {{ $t("table.counted") }}
             <span v-if="sortKey === 'trektellenCount'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>

@@ -6,7 +6,8 @@
         <img
           src="/defile_logo.png"
           alt="Défilé de l'Ecluse"
-          style="height: 36px; width: auto; margin-right: 10px"
+          class="me-2"
+          height="36"
         />
         {{ $t("nav.title") }}
       </a>
@@ -26,8 +27,8 @@
           v-model="selectedDate"
           :disabled="isLoadingData"
           :max="todaysDate"
-          class="form-control form-control-sm text-center"
-          style="width: 150px"
+          class="form-control form-control-sm text-center w-auto"
+          style="min-width: 150px"
         />
         <button
           v-show="!isToday"
@@ -39,7 +40,7 @@
           <i class="bi bi-chevron-right"></i>
         </button>
         <!-- Loading indicator with fixed space -->
-        <div class="ms-2" style="width: 24px; height: 24px">
+        <div class="ms-2 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px">
           <div
             v-show="isLoadingData"
             class="spinner-border spinner-border-sm text-light"
@@ -82,8 +83,8 @@
             v-model="selectedDate"
             :disabled="isLoadingData"
             :max="todaysDate"
-            class="form-control form-control-sm text-center"
-            style="width: 150px"
+            class="form-control form-control-sm text-center w-auto"
+            style="min-width: 150px"
           />
           <button
             v-show="!isToday"
@@ -95,7 +96,7 @@
             <i class="bi bi-chevron-right"></i>
           </button>
           <!-- Loading indicator with fixed space -->
-          <div class="ms-2" style="width: 24px; height: 24px">
+          <div class="ms-2 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px">
             <div
               v-show="isLoadingData"
               class="spinner-border spinner-border-sm text-light"
@@ -126,7 +127,7 @@
               class="nav-link"
               title="GitHub"
             >
-              <i class="bi bi-github" style="font-size: 1.5rem"></i>
+              <i class="bi bi-github fs-4"></i>
               <span class="d-lg-none ms-2">GitHub</span>
             </a>
           </li>
@@ -150,7 +151,7 @@
               data-bs-toggle="modal"
               data-bs-target="#settingsModal"
             >
-              <i class="bi bi-gear" style="font-size: 1.5rem"></i>
+              <i class="bi bi-gear fs-4"></i>
               <span class="d-lg-none ms-2">{{ $t("nav.settings") }}</span>
             </button>
           </li>
@@ -194,7 +195,9 @@
                   .toLowerCase()
                   .replace(/\s+/g, '_')}.svg`"
                 :alt="sp.species + ' icon'"
-                style="height: 26px; width: 26px; margin-right: 8px; flex-shrink: 0"
+                class="me-2 flex-shrink-0"
+                width="26"
+                height="26"
                 @error="$event.target.style.display = 'none'"
               />
               {{ $t(`species.${sp.species}`, sp.species) }}

@@ -19,7 +19,7 @@
         :title="`ERA5 documentation for ${currentVarMeta.label}`"
         :aria-label="`ERA5 documentation for ${currentVarMeta.label}`"
       >
-        <i class="bi bi-info-circle" style="font-size: 1rem"></i>
+        <i class="bi bi-info-circle fs-6"></i>
       </a>
       <label class="form-label mb-0 small d-inline-flex align-items-center gap-1">
         <span>{{ $t("weather.days") }}</span>
@@ -33,7 +33,7 @@
       </label>
     </div>
     <div class="card-body">
-      <div ref="plotEl" style="width: 100%; min-height: 360px"></div>
+      <div ref="plotEl" class="w-100" style="min-height: 360px"></div>
     </div>
   </div>
 </template>
