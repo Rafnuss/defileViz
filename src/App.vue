@@ -3,12 +3,7 @@
     <div class="container">
       <!-- Brand -->
       <a class="navbar-brand d-flex align-items-center mb-0 h1" href="#">
-        <img
-          src="/defile_logo.png"
-          alt="Défilé de l'Ecluse"
-          class="me-2"
-          height="36"
-        />
+        <img src="/defile_logo.png" alt="Défilé de l'Ecluse" class="me-2" height="36" />
         {{ $t("nav.title") }}
       </a>
 
@@ -40,7 +35,10 @@
           <i class="bi bi-chevron-right"></i>
         </button>
         <!-- Loading indicator with fixed space -->
-        <div class="ms-2 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px">
+        <div
+          class="ms-2 d-flex align-items-center justify-content-center"
+          style="width: 24px; height: 24px"
+        >
           <div
             v-show="isLoadingData"
             class="spinner-border spinner-border-sm text-light"
@@ -96,7 +94,10 @@
             <i class="bi bi-chevron-right"></i>
           </button>
           <!-- Loading indicator with fixed space -->
-          <div class="ms-2 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px">
+          <div
+            class="ms-2 d-flex align-items-center justify-content-center"
+            style="width: 24px; height: 24px"
+          >
             <div
               v-show="isLoadingData"
               class="spinner-border spinner-border-sm text-light"
