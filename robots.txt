@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://raphaelnussbaumer.com/defileViz/sitemap.xml
+
+# Crawl-delay for responsible crawling
+Crawl-delay: 1
+
+# Allow access to assets
+Allow: /assets/
+Allow: /species_icon/
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.svg
+Allow: /*.jpg
+Allow: /*.webp
+
+# Block access to development and build files
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /.git/
+Disallow: /.github/

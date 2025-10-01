@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- Main page with language alternates -->
+  <url>
+    <loc>https://raphaelnussbaumer.com/defileViz/</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://raphaelnussbaumer.com/defileViz/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://raphaelnussbaumer.com/defileViz/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://raphaelnussbaumer.com/defileViz/?lang=de"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://raphaelnussbaumer.com/defileViz/"/>
+  </url>
+  
+  <!-- English version -->
+  <url>
+    <loc>https://raphaelnussbaumer.com/defileViz/?lang=en</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- French version -->
+  <url>
+    <loc>https://raphaelnussbaumer.com/defileViz/?lang=fr</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- German version -->
+  <url>
+    <loc>https://raphaelnussbaumer.com/defileViz/?lang=de</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+</urlset>
