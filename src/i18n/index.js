@@ -310,7 +310,7 @@ const messages = {
 };
 
 /**
- * Initialize locale using modern browser APIs and localStorage
+ * Initialize locale using URL parameters, localStorage, and browser APIs
  * @returns {string} - The initialized locale (en, fr, de)
  */
 const initializeLocale = () => {
@@ -319,20 +319,35 @@ const initializeLocale = () => {
 
   // Check if running in browser environment
   if (typeof window !== "undefined") {
-    // 1. Try localStorage first
+    // 1. Try URL parameter first (highest priority)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLocale = urlParams.get("lang");
+      if (urlLocale && supportedLocales.includes(urlLocale)) {
+        console.log("Using URL parameter locale:", urlLocale);
+        initialLocale = urlLocale;
+        // Save to localStorage for future visits
+        localStorage.setItem("defile-locale", urlLocale);
+        return initialLocale;
+      }
+    } catch (error) {
+      console.warn("Error reading URL parameters:", error);
+    }
+
+    // 2. Try localStorage next
     try {
       const savedLocale = localStorage.getItem("defile-locale");
       if (savedLocale && supportedLocales.includes(savedLocale)) {
         console.log("Using saved locale:", savedLocale);
         initialLocale = savedLocale;
       } else {
-        // 2. Use modern Intl API for better browser language detection
+        // 3. Use modern Intl API for better browser language detection
         const browserLocale = Intl.DateTimeFormat().resolvedOptions().locale.split("-")[0];
         if (supportedLocales.includes(browserLocale)) {
           console.log("Using Intl detected locale:", browserLocale);
           initialLocale = browserLocale;
         } else {
-          // 3. Fallback to navigator.language
+          // 4. Fallback to navigator.language
           const navLang = navigator.language?.split("-")[0];
           if (navLang && supportedLocales.includes(navLang)) {
             console.log("Using navigator language:", navLang);

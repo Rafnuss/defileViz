@@ -597,20 +597,43 @@ function toggleAllSpecies() {
 
 // Lifecycle hooks
 onMounted(() => {
+  // Handle URL parameters on initial load FIRST
+  const urlParams = new URLSearchParams(window.location.search);
+  handleUrlParameters(urlParams);
+
+  // Now update species data with the correct date
   updateSpeciesData(selectedDate.value);
 
   // Handle browser back/forward navigation
   window.addEventListener("popstate", () => {
-    const dateParam = new URLSearchParams(window.location.search).get("date");
-    const today = new Date().toISOString().split("T")[0];
-
-    // Return URL date if valid and not in future, otherwise today
-    selectedDate.value =
-      dateParam && dateParam <= today && !isNaN(new Date(dateParam)) ? dateParam : today;
-
-    console.log("Popstate event: date set to", selectedDate.value);
+    const urlParams = new URLSearchParams(window.location.search);
+    handleUrlParameters(urlParams);
+    console.log("Popstate event: date set to", selectedDate.value, "locale set to", locale.value);
   });
 });
+
+/**
+ * Handle URL parameters for both initial load and popstate events
+ * @param {URLSearchParams} urlParams - URL search parameters
+ */
+function handleUrlParameters(urlParams) {
+  const supportedLocales = LANGUAGE_OPTIONS.map((lang) => lang.code);
+  const today = new Date().toISOString().split("T")[0];
+
+  // Handle date parameter
+  const dateParam = urlParams.get("date");
+  if (dateParam && dateParam <= today && !isNaN(new Date(dateParam))) {
+    selectedDate.value = dateParam;
+  }
+
+  // Handle language parameter
+  const langParam = urlParams.get("lang");
+  if (langParam && supportedLocales.includes(langParam) && locale.value !== langParam) {
+    console.log("Setting locale from URL parameter:", langParam);
+    locale.value = langParam;
+    updateLocale(langParam);
+  }
+}
 
 // Watchers
 watch(selectedDate, (newDate) => {
@@ -618,12 +641,20 @@ watch(selectedDate, (newDate) => {
   updateSpeciesData(newDate);
   const url = new URL(window.location);
   url.searchParams.set("date", newDate);
-  window.history.pushState({ date: newDate }, "", url);
+  window.history.pushState({ date: newDate, lang: locale.value }, "", url);
 });
 
 watch(locale, (newLocale) => {
   console.log("Locale changed to", newLocale);
   updateLocale(newLocale);
+  const url = new URL(window.location);
+  url.searchParams.set("lang", newLocale);
+  // Preserve existing date parameter if it exists
+  const currentDate = url.searchParams.get("date");
+  if (!currentDate) {
+    url.searchParams.set("date", selectedDate.value);
+  }
+  window.history.pushState({ date: selectedDate.value, lang: newLocale }, "", url);
 });
 </script>
 
