@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from "vue";
+import { ref, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-basic-dist-min";
 
@@ -221,6 +221,7 @@ function render() {
 }
 
 onMounted(() => render());
+onBeforeUnmount(() => plotEl.value && Plotly.purge(plotEl.value));
 </script>
 
 <style scoped>

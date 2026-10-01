@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div ref="rootEl">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="text-muted mb-0">{{ $t("plots.today") }}...</h6>
       <div class="d-flex gap-2">
@@ -36,9 +36,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed, inject } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-basic-dist-min";
+import { usePlot } from "../utils/usePlot";
 import { Tooltip } from "bootstrap";
 import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
 import { localUtcOffset } from "../utils/daylight";
@@ -57,6 +58,8 @@ const ID_LOWER = inject("ID_LOWER");
 const ID_UPPER = inject("ID_UPPER");
 
 const plotDiv = ref(null);
+const rootEl = ref(null);
+const visible = usePlot(plotDiv);
 
 async function createPlot() {
   const historical = props.historical;
@@ -64,10 +67,9 @@ async function createPlot() {
   const trektellen = props.trektellen;
 
   // Only require plotDiv and historical data
-  if (!plotDiv.value || !historical) return;
+  if (!plotDiv.value || !visible.value || !historical) return;
 
   await nextTick();
-  Plotly.purge(plotDiv.value);
   const allTraces = [];
 
   // x is the UTC hour (as in the forecast NetCDF); ticks and hover labels show local time.
@@ -235,7 +237,7 @@ async function createPlot() {
     annotations: [],
   };
   try {
-    await Plotly.newPlot(plotDiv.value, allTraces, layout, {
+    await Plotly.react(plotDiv.value, allTraces, layout, {
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false,
@@ -281,8 +283,9 @@ const observedSignificance = computed(() => {
 
 function initializeTooltips() {
   nextTick(() => {
-    // Initialize all tooltips in the component
-    const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    // Only this component's tooltips: each species card has its own instance
+    if (!rootEl.value) return;
+    const tooltipElements = rootEl.value.querySelectorAll('[data-bs-toggle="tooltip"]');
     tooltipElements.forEach((el) => {
       // Dispose existing tooltip if any
       const existingTooltip = Tooltip.getInstance(el);
@@ -295,21 +298,21 @@ function initializeTooltips() {
   });
 }
 
-onMounted(() => {
-  createPlot();
-  initializeTooltips();
+onMounted(initializeTooltips);
+onBeforeUnmount(() => {
+  rootEl.value
+    ?.querySelectorAll('[data-bs-toggle="tooltip"]')
+    .forEach((el) => Tooltip.getInstance(el)?.dispose());
 });
 
+// Each load creates new prop objects, so a shallow watch is enough
+watch(visible, createPlot);
 watch(
   () => [props.historical, props.forecast, props.trektellen],
   () => {
-    // Create plot when we have historical data (with or without forecast)
-    if (props.historical) {
-      createPlot();
-      initializeTooltips();
-    }
-  },
-  { deep: true }
+    createPlot();
+    initializeTooltips();
+  }
 );
 </script>
 

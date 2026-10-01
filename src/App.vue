@@ -166,14 +166,7 @@
 
     <TodayTable
       v-if="species && species.length > 0"
-      :species="
-        species.map((sp) => ({
-          species: sp.species,
-          historical: sp.historical[0],
-          forecast: sp.forecast[0],
-          trektellen: sp.trektellen,
-        }))
-      "
+      :species="todayRows"
     />
     <div v-if="loadError && !isLoadingData" class="alert alert-warning" role="alert">
       {{ $t("common.noForecast") }}
@@ -221,7 +214,7 @@
               <i :class="sp.collapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
             </button>
           </div>
-          <div v-show="!sp.collapsed" class="card-body">
+          <div v-if="!sp.collapsed" class="card-body">
             <div class="row">
               <div class="col-6" v-if="plotOptions.find((p) => p.name === 'today').show">
                 <PlotToday
@@ -461,6 +454,15 @@ const WEATHER_VARIABLES = [
   "sun_altitude",
   "sun_azimuth",
 ];
+
+const todayRows = computed(() =>
+  species.value.map((sp) => ({
+    species: sp.species,
+    historical: sp.historical[0],
+    forecast: sp.forecast[0],
+    trektellen: sp.trektellen,
+  }))
+);
 
 const allCollapsed = computed(() => {
   return species.value.every((sp) => sp.collapsed);

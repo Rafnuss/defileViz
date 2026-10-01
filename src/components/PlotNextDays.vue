@@ -6,12 +6,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, inject } from "vue";
+import { ref, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-basic-dist-min";
+import { usePlot } from "../utils/usePlot";
 import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
+import { localUtcOffset } from "../utils/daylight";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps({
   historical: { type: Array, required: true },
@@ -24,13 +26,14 @@ const ID_LOWER = inject("ID_LOWER");
 const ID_UPPER = inject("ID_UPPER");
 
 const plotDiv = ref(null);
+const visible = usePlot(plotDiv);
 
 async function createPlot() {
   const historical = props.historical;
   const forecast = props.forecast;
   const date = props.date;
 
-  if (!plotDiv.value || !historical || !forecast || !date) return;
+  if (!plotDiv.value || !visible.value || !historical || !forecast || !date) return;
 
   const nDays = date.length;
 
@@ -40,7 +43,6 @@ async function createPlot() {
       ?.predHourlyCount.length || 1;
 
   await nextTick();
-  Plotly.purge(plotDiv.value);
 
   const traces = [];
 
@@ -54,15 +56,17 @@ async function createPlot() {
       const dayArr = forecast[d]?.predHourlyCount || [];
 
       const dayStart = d * hoursPerDay;
-      for (let h = 1; h < dayArr.length; h++) {
+      const offset = localUtcOffset(date[d]);
+      for (let h = 0; h < dayArr.length; h++) {
         // Place each bar at the center of its hour bucket within the day
         x.push(dayStart + h + 0.5);
         y.push(dayArr[h]);
         const dateObj = date[d] ? new Date(date[d]) : null;
         const dateLabel = dateObj
-          ? dateObj.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+          ? dateObj.toLocaleDateString(locale.value, { month: "short", day: "numeric" })
           : `Day ${d + 1}`;
-        custom.push(`${dateLabel}, hour ${h}`);
+        const localHour = (((h + offset) % 24) + 24) % 24;
+        custom.push(`${dateLabel}, ${localHour}h-${(localHour + 1) % 24}h`);
       }
     }
 
@@ -155,7 +159,7 @@ async function createPlot() {
   const ticktext = Array.from({ length: nDays }, (_, d) => {
     const dateObj = date[d] ? new Date(date[d]) : null;
     return dateObj
-      ? dateObj.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      ? dateObj.toLocaleDateString(locale.value, { month: "short", day: "numeric" })
       : `D${d + 1}`;
   });
 
@@ -178,7 +182,7 @@ async function createPlot() {
   };
 
   try {
-    await Plotly.newPlot(plotDiv.value, traces, layout, {
+    await Plotly.react(plotDiv.value, traces, layout, {
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false,
@@ -191,11 +195,10 @@ async function createPlot() {
   }
 }
 
-onMounted(createPlot);
+// Each load creates new prop objects, so a shallow watch is enough
 watch(
-  () => [props.historical, props.forecast, props.date],
-  () => createPlot(),
-  { deep: true }
+  () => [visible.value, props.historical, props.forecast, props.date, locale.value],
+  createPlot
 );
 </script>
 

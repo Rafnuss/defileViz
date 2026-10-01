@@ -11,9 +11,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, inject } from "vue";
+import { ref, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-basic-dist-min";
+import { usePlot } from "../utils/usePlot";
 import { dayWindow, dayOfYear } from "../utils/daylight";
 
 const { t } = useI18n();
@@ -31,12 +32,13 @@ const ID_LOWER = inject("ID_LOWER");
 const ID_UPPER = inject("ID_UPPER");
 
 const plotDiv = ref(null);
+const visible = usePlot(plotDiv);
 
 async function createPlot() {
   const season = props.season;
   const date = props.date;
 
-  if (!season?.doy || !plotDiv.value) {
+  if (!season?.doy || !plotDiv.value || !visible.value) {
     return;
   }
 
@@ -187,7 +189,7 @@ async function createPlot() {
   };
 
   try {
-    await Plotly.newPlot(plotDiv.value, traces, layout, {
+    await Plotly.react(plotDiv.value, traces, layout, {
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false,
@@ -200,11 +202,10 @@ async function createPlot() {
   }
 }
 
-onMounted(createPlot);
-watch(() => props.season, createPlot, { deep: true });
-watch(() => props.totalPredicted, createPlot);
-watch(() => props.totalObserved, createPlot);
-watch(() => props.date, createPlot);
+watch(
+  () => [visible.value, props.season, props.totalPredicted, props.totalObserved, props.date],
+  createPlot
+);
 </script>
 
 <style scoped>
