@@ -44,7 +44,7 @@
             class="spinner-border spinner-border-sm text-light"
             role="status"
           >
-            <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">{{ $t("common.loading") }}</span>
           </div>
         </div>
       </div>
@@ -72,7 +72,7 @@
             class="btn btn-outline-light btn-sm me-2"
             @click="changeDateByDays(-1)"
             :disabled="isLoadingData"
-            title="Previous day"
+            :title="$t('common.previousDay')"
           >
             <i class="bi bi-chevron-left"></i>
           </button>
@@ -89,7 +89,7 @@
             class="btn btn-outline-light btn-sm ms-2"
             @click="changeDateByDays(1)"
             :disabled="isLoadingData"
-            title="Next day"
+            :title="$t('common.nextDay')"
           >
             <i class="bi bi-chevron-right"></i>
           </button>
@@ -125,6 +125,7 @@
             <a
               href="https://github.com/AmedeeRoy/defile-migration-forecast"
               target="_blank"
+              rel="noopener"
               class="nav-link"
               title="GitHub"
             >
@@ -136,6 +137,7 @@
             <a
               :href="`https://www.trektellen.org/count/view/2422/${selectedDate.replace(/-/g, '')}`"
               target="_blank"
+              rel="noopener"
               class="nav-link d-flex align-items-center justify-content-center justify-content-lg-start"
             >
               <img
@@ -269,7 +271,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Settings</h5>
+          <h5 class="modal-title">{{ $t("settings.title") }}</h5>
           <button
             type="button"
             class="btn-close"
@@ -280,7 +282,7 @@
         <div class="modal-body">
           <!-- Plot selection -->
           <div class="mb-3 form-group">
-            <label for="plots">Plots to display</label>
+            <label for="plots">{{ $t("settings.plotsToDisplay") }}</label>
             <div class="btn-group w-100" role="group" aria-label="Plot type selector" id="plots">
               <button
                 v-for="plot in plotOptions"
@@ -290,13 +292,13 @@
                 :class="{ active: plot.show }"
                 @click="plot.show = !plot.show"
               >
-                {{ plot.label }}
+                {{ $t(`settings.${plot.name}`) }}
               </button>
             </div>
           </div>
           <!-- Threshold input -->
           <div class="mb-3 form-group">
-            <label for="thr">Historical median count threshold </label>
+            <label for="thr">{{ $t("settings.threshold") }}</label>
             <input
               type="number"
               step="1"
@@ -307,14 +309,11 @@
               class="form-control"
               aria-describedby="thrHelp"
             />
-            <small id="thrHelp" class="form-text text-muted"
-              >Only species with a higher historical median daily count for the day will be
-              displayed</small
-            >
+            <small id="thrHelp" class="form-text text-muted">{{ $t("settings.thresholdHelp") }}</small>
           </div>
           <!-- Next days length -->
           <div class="mb-3 form-group">
-            <label for="nextDays">Number of next days to display</label>
+            <label for="nextDays">{{ $t("settings.nextDaysCount") }}</label>
             <input
               type="number"
               step="1"
@@ -325,18 +324,18 @@
               class="form-control"
               aria-describedby="nextDaysHelp"
             />
-            <small id="nextDaysHelp" class="form-text text-muted"
-              >Number of days after today to show in the "Next Days" forecast</small
-            >
+            <small id="nextDaysHelp" class="form-text text-muted">{{
+              $t("settings.nextDaysHelp")
+            }}</small>
           </div>
           <!-- Sort selection -->
           <div class="mb-3 form-group">
-            <label for="sortOption" class="form-label">Sort species by</label>
+            <label for="sortOption" class="form-label">{{ $t("settings.sortBy") }}</label>
             <select v-model="sortOption" class="form-select" id="sortOption">
-              <option value="taxonomy">Taxonomy</option>
-              <option value="median">Median count</option>
-              <option value="predicted">Predicted count</option>
-              <option value="quantile">Quantile predicted</option>
+              <option value="taxonomy">{{ $t("settings.taxonomy") }}</option>
+              <option value="median">{{ $t("settings.median") }}</option>
+              <option value="predicted">{{ $t("settings.predicted") }}</option>
+              <option value="quantile">{{ $t("settings.quantile") }}</option>
             </select>
           </div>
         </div>
@@ -398,16 +397,42 @@ const isLoadingData = ref(false);
 const loadError = ref(null);
 
 // UI state
-const plotOptions = ref([
-  { name: "today", label: "Today", show: true },
-  { name: "nextDays", label: "Next Days", show: true },
-  { name: "season", label: "Season", show: true },
-]);
+// Settings, remembered in localStorage
+const SETTINGS_KEY = "defile-settings";
+const savedSettings = (() => {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+  } catch {
+    return {};
+  }
+})();
+const plotOptions = ref(
+  ["today", "nextDays", "season"].map((name) => ({
+    name,
+    show: savedSettings.plots?.[name] ?? true,
+  }))
+);
+const medianThreshold = ref(savedSettings.medianThreshold ?? 0);
+const nextDaysLength = ref(savedSettings.nextDaysLength ?? 4);
+const sortOption = ref(savedSettings.sortOption ?? "taxonomy");
 
-// Settings
-const medianThreshold = ref(0);
-const nextDaysLength = ref(4);
-const sortOption = ref("taxonomy");
+watch(
+  [plotOptions, medianThreshold, nextDaysLength, sortOption],
+  () => {
+    const settings = {
+      plots: Object.fromEntries(plotOptions.value.map((p) => [p.name, p.show])),
+      medianThreshold: medianThreshold.value,
+      nextDaysLength: nextDaysLength.value,
+      sortOption: sortOption.value,
+    };
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch {
+      // Storage blocked (private mode): settings just aren't remembered
+    }
+  },
+  { deep: true }
+);
 
 // Computed properties
 const isToday = computed(() => selectedDate.value === todaysDate.value);

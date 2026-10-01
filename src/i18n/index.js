@@ -87,6 +87,12 @@ const messages = {
       variable: "Variable:",
       days: "Days:",
     },
+    significance: {
+      exceptional: "Exceptionally high compared to past years ({p}th percentile).",
+      notable: "Notably high compared to past years ({p}th percentile).",
+      above: "Above average compared to past years ({p}th percentile).",
+      below: "Below average compared to past years ({p}th percentile).",
+    },
     common: {
       loading: "Loading",
       previousDay: "Previous day",
@@ -187,6 +193,12 @@ const messages = {
       title: "Prévisions Météorologiques",
       variable: "Variable:",
       days: "Jours:",
+    },
+    significance: {
+      exceptional: "Exceptionnellement élevé par rapport aux années passées ({p}e centile).",
+      notable: "Nettement élevé par rapport aux années passées ({p}e centile).",
+      above: "Au-dessus de la moyenne des années passées ({p}e centile).",
+      below: "En dessous de la moyenne des années passées ({p}e centile).",
     },
     common: {
       loading: "Chargement",
@@ -290,6 +302,12 @@ const messages = {
       variable: "Variable:",
       days: "Tage:",
     },
+    significance: {
+      exceptional: "Außergewöhnlich hoch im Vergleich zu früheren Jahren ({p}. Perzentil).",
+      notable: "Deutlich hoch im Vergleich zu früheren Jahren ({p}. Perzentil).",
+      above: "Über dem Durchschnitt früherer Jahre ({p}. Perzentil).",
+      below: "Unter dem Durchschnitt früherer Jahre ({p}. Perzentil).",
+    },
     common: {
       loading: "Laden",
       previousDay: "Vorheriger Tag",
@@ -330,7 +348,6 @@ const initializeLocale = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const urlLocale = urlParams.get("lang");
       if (urlLocale && supportedLocales.includes(urlLocale)) {
-        console.log("Using URL parameter locale:", urlLocale);
         initialLocale = urlLocale;
         // Save to localStorage for future visits
         localStorage.setItem("defile-locale", urlLocale);
@@ -344,22 +361,17 @@ const initializeLocale = () => {
     try {
       const savedLocale = localStorage.getItem("defile-locale");
       if (savedLocale && supportedLocales.includes(savedLocale)) {
-        console.log("Using saved locale:", savedLocale);
         initialLocale = savedLocale;
       } else {
         // 3. Use modern Intl API for better browser language detection
         const browserLocale = Intl.DateTimeFormat().resolvedOptions().locale.split("-")[0];
         if (supportedLocales.includes(browserLocale)) {
-          console.log("Using Intl detected locale:", browserLocale);
           initialLocale = browserLocale;
         } else {
           // 4. Fallback to navigator.language
           const navLang = navigator.language?.split("-")[0];
           if (navLang && supportedLocales.includes(navLang)) {
-            console.log("Using navigator language:", navLang);
             initialLocale = navLang;
-          } else {
-            console.log("No supported language found, using English fallback");
           }
         }
       }
@@ -368,11 +380,8 @@ const initializeLocale = () => {
       // Even simpler fallback - just use English
       initialLocale = "en";
     }
-  } else {
-    console.log("SSR environment, using English fallback");
   }
 
-  console.log("Initializing locale to:", initialLocale);
   return initialLocale;
 };
 
@@ -398,7 +407,6 @@ export const updateLocale = (newLocale) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("defile-locale", newLocale);
     }
-    console.log("Updated locale to:", newLocale);
   } else {
     console.warn("Unsupported locale:", newLocale);
   }

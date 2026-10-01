@@ -7,7 +7,6 @@
           <span
             :style="{ color: predSignificance.color }"
             data-bs-toggle="tooltip"
-            data-bs-html="true"
             :data-bs-title="predSignificance.explanation"
           >
             {{
@@ -23,7 +22,6 @@
           v-if="props.trektellen && props.trektellen.count > 0"
           :style="{ color: observedSignificance.color }"
           data-bs-toggle="tooltip"
-          data-bs-html="true"
           :data-bs-title="observedSignificance.explanation"
         >
           {{ props.trektellen.count }} {{ $t("table.counted").toLowerCase() }}
@@ -258,16 +256,16 @@ function getSignificance(quantile) {
 
   if (quantile >= 90) {
     color = "red";
-    explanation = `Exceptionally high compared to historical years (${percentile}<sup>th</sup> percentile).`;
+    explanation = t("significance.exceptional", { p: percentile });
   } else if (quantile >= 80) {
     color = "orange";
-    explanation = `Notably high compared to historical years (${percentile}<sup>th</sup> percentile).`;
+    explanation = t("significance.notable", { p: percentile });
   } else if (quantile >= 50) {
     color = "green";
-    explanation = `Above average compared to historical years (${percentile}<sup>th</sup> percentile).`;
+    explanation = t("significance.above", { p: percentile });
   } else {
     color = "black";
-    explanation = `Below average compared to historical years (${percentile}<sup>th</sup> percentile).`;
+    explanation = t("significance.below", { p: percentile });
   }
 
   return { color, explanation };

@@ -44,15 +44,20 @@ const showIntro = ref(true);
 
 // Load saved state from localStorage
 onMounted(() => {
-  const savedState = localStorage.getItem("defile-intro-dismissed");
-  if (savedState === "true") {
-    showIntro.value = false;
+  try {
+    showIntro.value = localStorage.getItem("defile-intro-dismissed") !== "true";
+  } catch {
+    // Storage blocked (private mode): always show the intro
   }
 });
 
 // Function to handle closing intro and save state
 function closeIntro() {
   showIntro.value = false;
-  localStorage.setItem("defile-intro-dismissed", "true");
+  try {
+    localStorage.setItem("defile-intro-dismissed", "true");
+  } catch {
+    // Storage blocked: the intro shows again next visit
+  }
 }
 </script>
