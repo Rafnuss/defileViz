@@ -1,5 +1,27 @@
 import { NetCDFReader } from "netcdfjs";
 
+const FETCH_TIMEOUT_MS = 20000;
+const CACHE_SIZE = 40;
+// url -> Promise<NetCDFReader>; shared between species and weather requests and kept across date
+// changes so navigating back and forth doesn't download the same file again
+const readerCache = new Map();
+
+function loadReader(url) {
+  if (readerCache.has(url)) return readerCache.get(url);
+  const promise = window
+    .fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status} fetching ${url}`);
+      return response.arrayBuffer();
+    })
+    .then((buffer) => new NetCDFReader(new Uint8Array(buffer)));
+  // Don't keep failures: a later request should retry
+  promise.catch(() => readerCache.delete(url));
+  readerCache.set(url, promise);
+  if (readerCache.size > CACHE_SIZE) readerCache.delete(readerCache.keys().next().value);
+  return promise;
+}
+
 /**
  * Fetch NetCDF forecast variables for a species and date.
  *
@@ -7,6 +29,7 @@ import { NetCDFReader } from "netcdfjs";
  * @param {string} speciesName    Species name (folder & filename component)
  * @param {string|string[]} variableNames Variable name or list of variable names to extract
  * @returns {Promise<Object<string, any>>} Mapping variable -> 2D array [dateIndex][hourIndex], plus dates/time
+ * @throws if the file can't be fetched or parsed, or has no date/time dimensions
  */
 export async function fetchNetCDF(dateStr, speciesName, variableNames = ["pred_log_hourly_count"]) {
   const speciesNameUnderscored = speciesName.replace(/ /g, "_");
@@ -15,21 +38,14 @@ export async function fetchNetCDF(dateStr, speciesName, variableNames = ["pred_l
     ""
   )}_${speciesNameUnderscored}.nc`;
 
-  try {
-    const response = await window.fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status} fetching ${url}`);
-    const buffer = await response.arrayBuffer();
-    const nc = new NetCDFReader(new Uint8Array(buffer));
+  const nc = await loadReader(url);
 
     const variables = Array.isArray(variableNames) ? variableNames : [variableNames];
     if (variables.length === 0) return {};
 
     const nDates = nc.dimensions.find((d) => d.name === "date")?.size ?? 0;
     const nHours = nc.dimensions.find((d) => d.name === "time")?.size ?? 0;
-    if (!nDates || !nHours) {
-      console.warn(`Missing dimensions in NetCDF for ${speciesName}`);
-      return {};
-    }
+    if (!nDates || !nHours) throw new Error(`Missing dimensions in NetCDF for ${speciesName}`);
 
     let dates = [];
     try {
@@ -41,7 +57,7 @@ export async function fetchNetCDF(dateStr, speciesName, variableNames = ["pred_l
         const baseDate = new Date(baseStr);
         dates = dateVar.map((offset) => {
           const d = new Date(baseDate);
-          d.setDate(d.getDate() + Math.round(offset));
+          d.setUTCDate(d.getUTCDate() + Math.round(offset));
           return d;
         });
       }
@@ -69,8 +85,4 @@ export async function fetchNetCDF(dateStr, speciesName, variableNames = ["pred_l
     }
 
     return result;
-  } catch (e) {
-    console.error(`Error fetching NetCDF for ${speciesName}:`, e);
-    return {};
-  }
 }

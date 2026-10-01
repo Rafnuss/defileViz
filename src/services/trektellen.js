@@ -1,6 +1,6 @@
 /**
  * Fetch Trektellen raw data for a site and date, returning the full API response.
- * Authentication is handled internally via env vars.
+ * Authentication is added by the proxy at defile.raphaelnussbaumer.com.
  *
  * @param {string} dateStr - Date in YYYY-MM-DD
  * @param {string|number} siteId - Trektellen site ID (default 2422)
@@ -16,6 +16,7 @@ export async function fetchTrektellenData(dateStr, siteId = 2422) {
     headers: {
       Accept: "application/json",
     },
+    signal: AbortSignal.timeout(20000),
   });
 
   if (!response.ok) {
@@ -25,7 +26,7 @@ export async function fetchTrektellenData(dateStr, siteId = 2422) {
 
   const data = await response.json();
   const firstKey = Object.keys(data)[0];
-  if (!firstKey) return [];
+  if (!firstKey) return {};
 
   const rows = Array.isArray(data[firstKey]?.data) ? data[firstKey].data : [];
   const bySpecies = {};

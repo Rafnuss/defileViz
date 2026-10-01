@@ -14,7 +14,7 @@
 import { ref, onMounted, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-basic-dist-min";
-import { dayWindow } from "../utils/daylight";
+import { dayWindow, dayOfYear } from "../utils/daylight";
 
 const { t } = useI18n();
 
@@ -55,9 +55,7 @@ async function createPlot() {
     : 0;
 
   // Get today's DOY for vertical line
-  const today = new Date(date);
-  const startOfYear = new Date(today.getFullYear(), 0, 0);
-  const todayDoy = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24));
+  const todayDoy = dayOfYear(date);
 
   // Create month tick positions and labels (July to December)
   const monthTicks = [];
@@ -65,10 +63,7 @@ async function createPlot() {
   const months = ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   for (let month = 7; month <= 12; month++) {
-    const date = new Date(new Date().getFullYear(), month - 1, 1);
-    const startOfYear = new Date(date.getFullYear(), 0, 0);
-    const dayOfYear = Math.floor((date - startOfYear) / (1000 * 60 * 60 * 24));
-    monthTicks.push(dayOfYear);
+    monthTicks.push(dayOfYear(Date.UTC(new Date(date).getUTCFullYear(), month - 1, 1)));
     monthLabels.push(months[month - 7]);
   }
 

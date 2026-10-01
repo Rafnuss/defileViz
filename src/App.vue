@@ -175,6 +175,16 @@
         }))
       "
     />
+    <div v-if="loadError && !isLoadingData" class="alert alert-warning" role="alert">
+      {{ $t("common.noForecast") }}
+    </div>
+    <div
+      v-else-if="!isLoadingData && species.length && !speciesDisplay.length"
+      class="alert alert-info"
+      role="alert"
+    >
+      {{ $t("common.outOfSeason") }}
+    </div>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2 class="mb-0">{{ $t("plots.hourlyPrediction") }}</h2>
       <button class="btn btn-outline-secondary btn-sm" @click="toggleAllSpecies" type="button">
@@ -267,7 +277,12 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Settings</h5>
-          <button type="button" class="btn-close" @click="showSettings = false"></button>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            :aria-label="$t('common.close')"
+          ></button>
         </div>
         <div class="modal-body">
           <!-- Plot selection -->
@@ -340,19 +355,17 @@
 
 <script setup>
 // Vue imports
-import { ref, computed, watch, onMounted, provide } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, provide } from "vue";
 import { useI18n } from "vue-i18n";
 import { LANGUAGE_OPTIONS, updateLocale } from "./i18n";
 
 // Species data
 import species_doy_statistics0 from "../src/species_doy_statistics.json";
-const species_doy_statistics = species_doy_statistics0.filter(
-  (sp) => !sp.species.includes(["Merlin"])
-);
+const species_doy_statistics = species_doy_statistics0.filter((sp) => sp.species !== "Merlin");
 
 // Stats functions
 import { predictQuantile } from "./utils/stats";
-import { dayWindow } from "./utils/daylight";
+import { dayWindow, dayOfYear, localDateString, addDays } from "./utils/daylight";
 
 // Fetcher service
 import { fetchNetCDF } from "./services/netcdf";
@@ -385,8 +398,11 @@ const { locale } = useI18n();
 // Reactive data
 const species = ref([]);
 const weather = ref(null);
-const selectedDate = ref(new Date().toISOString().split("T")[0]);
+// Dates are "YYYY-MM-DD" days at the count site (Europe/Paris), whatever the browser's time zone
+const todaysDate = ref(localDateString());
+const selectedDate = ref(todaysDate.value);
 const isLoadingData = ref(false);
+const loadError = ref(null);
 
 // UI state
 const plotOptions = ref([
@@ -401,7 +417,6 @@ const nextDaysLength = ref(4);
 const sortOption = ref("taxonomy");
 
 // Computed properties
-const todaysDate = computed(() => new Date().toISOString().split("T")[0]);
 const isToday = computed(() => selectedDate.value === todaysDate.value);
 
 const speciesDisplay = computed(() => {
@@ -428,6 +443,25 @@ const speciesDisplay = computed(() => {
   return sortFunctions[sortOption.value]() || filtered;
 });
 
+const WEATHER_VARIABLES = [
+  "temperature_2m",
+  "dewpoint_temperature_2m",
+  "total_precipitation",
+  "surface_pressure",
+  "u_component_of_wind_10m",
+  "v_component_of_wind_10m",
+  "u_component_of_wind_100m",
+  "v_component_of_wind_100m",
+  "instantaneous_10m_wind_gust",
+  "high_cloud_cover",
+  "low_cloud_cover",
+  "medium_cloud_cover",
+  "total_cloud_cover",
+  "surface_solar_radiation_downwards",
+  "sun_altitude",
+  "sun_azimuth",
+];
+
 const allCollapsed = computed(() => {
   return species.value.every((sp) => sp.collapsed);
 });
@@ -436,146 +470,124 @@ const allCollapsed = computed(() => {
  * Updates species data for a given date
  * @param {string} dateStr - Date string in YYYY-MM-DD format
  */
+// Incremented on every load so a slower, older load can't overwrite a newer one
+let loadId = 0;
+
 async function updateSpeciesData(dateStr) {
+  const myLoad = ++loadId;
   isLoadingData.value = true;
+  loadError.value = null;
+  try {
+    await loadSpeciesData(dateStr, () => myLoad !== loadId);
+  } finally {
+    if (myLoad === loadId) isLoadingData.value = false;
+  }
+}
 
-  // Convert date to day of year
-  const date = new Date(dateStr);
-  const startOfYear = new Date(date.getFullYear(), 0, 0);
-  const doy = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
-  species.value = species_doy_statistics.map((sp0) => {
+async function loadSpeciesData(dateStr, isStale) {
+  const doy = dayOfYear(dateStr);
+  const maxDays = 14; // Limit to 14 days max
+  const list = species_doy_statistics.map((sds) => {
     const sp = {
-      species: sp0.species,
-      trektellen_species_id: sp0.trektellen_species_id,
-      quantile_levels: sp0.quantile_levels,
+      species: sds.species,
+      trektellen_species_id: sds.trektellen_species_id,
+      quantile_levels: sds.quantile_levels,
       collapsed: false,
+      date: [],
+      historical: [],
+      forecast: [],
+      trektellen: {},
     };
-
-    // Initialize per-day arrays for the window [today .. today + nextDaysLength-1]
-    sp.date = [];
-    sp.historical = [];
-    sp.forecast = [];
-    sp.trektellen = {};
-
-    const sds = species_doy_statistics.find((s) => s.species === sp.species); // ensure reference
-    const todayId = sds.doy.indexOf(doy);
-    const maxDays = 14; // Limit to 14 days max
     const id_median = sp.quantile_levels.indexOf(50);
 
     for (let i = 0; i < maxDays; i++) {
-      // Date entry
-      const d2 = new Date(date);
-      d2.setDate(d2.getDate() + i);
+      const d2 = new Date(addDays(dateStr, i));
       sp.date.push(d2);
 
-      // Historical stats entry with bounds guards
-      const idx = todayId + i;
+      // Historical stats only cover the season: outside it every field is null
+      const idx = sds.doy.indexOf(doy + i);
+      const at = (arr) => (idx >= 0 ? (arr?.[idx] ?? null) : null);
       sp.historical.push({
-        quantiles: sds.quantiles?.[idx] ?? null,
-        min: sds.min?.[idx] ?? null,
-        max: sds.max?.[idx] ?? null,
-        mean: sds.mean?.[idx] ?? null,
-        ratio: sds.ratio?.[idx] ?? null,
-        median: sds.quantiles?.[idx]?.[id_median] ?? null,
+        quantiles: at(sds.quantiles),
+        min: at(sds.min),
+        max: at(sds.max),
+        mean: at(sds.mean),
+        ratio: at(sds.ratio),
+        median: at(sds.quantiles)?.[id_median] ?? null,
         // Non-night UTC hours of that day, same rule as the forecast model's night mask
         window: dayWindow(d2),
       });
     }
-
     return sp;
   });
 
-  // Fetch forecast data for all species
-  const promises = species.value.map(async (sp) => {
-    try {
+  // Forecasts, weather and Trektellen counts are independent: fetch them in parallel
+  const forecastsPromise = Promise.allSettled(
+    list.map(async (sp) => {
       const varsData = await fetchNetCDF(dateStr, sp.species, ["pred_log_hourly_count"]);
-      const forecastDataRaw = varsData?.pred_log_hourly_count || [];
       // Apply transform locally: pred_log_hourly_count is exp(x) - 1
-      const forecastData = forecastDataRaw.map((row) => row.map((x) => Math.exp(x) - 1));
-
+      const forecastData = (varsData.pred_log_hourly_count || []).map((row) =>
+        row.map((x) => Math.exp(x) - 1)
+      );
       if (!forecastData.length || !forecastData[0]?.length) throw new Error("No forecast data");
 
       sp.forecast = forecastData.map((arr, idx) => {
         const predTotal = (arr || []).reduce((x, y) => x + (y ?? 0), 0);
-
         const predTotalQuantile = predictQuantile(
           predTotal,
           // historical is birds/h: scale by that day's non-night hours to get a daily total
           sp.historical[idx]?.quantiles?.map((q) => q * sp.historical[idx].window.nHours),
           sp.quantile_levels
         );
-        return {
-          predHourlyCount: arr,
-          predTotal: predTotal,
-          predTotalQuantile: predTotalQuantile,
-        };
+        return { predHourlyCount: arr, predTotal, predTotalQuantile };
       });
-    } catch (e) {
-      console.error(`Failed to fetch forecast for ${sp.species}:`, e);
-      // update with what we have
-    }
+    })
+  );
+
+  const weatherPromise = fetchNetCDF(dateStr, "Osprey", WEATHER_VARIABLES).catch((e) => {
+    console.error("Error fetching weather data:", e);
+    return null;
   });
 
-  await Promise.all(promises);
+  const trektellenPromise = fetchTrektellenData(dateStr).catch((e) => {
+    console.error("Error fetching Trektellen data:", e);
+    return null;
+  });
 
-  // Fetch weather data
-  try {
-    weather.value = await fetchNetCDF(dateStr, "Osprey", [
-      "temperature_2m",
-      "dewpoint_temperature_2m",
-      "total_precipitation",
-      "surface_pressure",
-      "u_component_of_wind_10m",
-      "v_component_of_wind_10m",
-      "u_component_of_wind_100m",
-      "v_component_of_wind_100m",
-      "instantaneous_10m_wind_gust",
-      "high_cloud_cover",
-      "low_cloud_cover",
-      "medium_cloud_cover",
-      "total_cloud_cover",
-      "surface_solar_radiation_downwards",
-      "sun_altitude",
-      "sun_azimuth",
-    ]);
-  } catch (e) {
-    console.error("Error fetching weather data:", e);
-    weather.value = null;
-  }
+  const [forecasts, weatherData, bySpecies] = await Promise.all([
+    forecastsPromise,
+    weatherPromise,
+    trektellenPromise,
+  ]);
+  if (isStale()) return;
 
-  // Fetch Trektellen data
-  try {
-    const bySpecies = await fetchTrektellenData(dateStr);
-    if (!bySpecies || Object.keys(bySpecies).length === 0) {
-      console.warn("Trektellen: no data for date or empty response");
-    } else {
-      for (const sp of species.value) {
-        const obsList = bySpecies[String(sp.trektellen_species_id)];
-        if (obsList?.length) {
-          sp.trektellen = {
-            observations: obsList,
-            count: obsList.reduce((sum, o) => sum + (o?.left ?? 0), 0),
-          };
-        } else {
-          sp.trektellen = {
-            observations: [],
-            count: 0,
-          };
-        }
-        sp.trektellen.totalQuantile = predictQuantile(
-          sp.trektellen.count,
+  const failed = forecasts.filter((r) => r.status === "rejected");
+  failed.forEach((r) => console.error("Failed to fetch forecast:", r.reason));
+  if (failed.length === forecasts.length) loadError.value = "noForecast";
+
+  if (bySpecies && Object.keys(bySpecies).length > 0) {
+    for (const sp of list) {
+      const obsList = bySpecies[String(sp.trektellen_species_id)] || [];
+      const count = obsList.reduce((sum, o) => sum + (o?.left ?? 0), 0);
+      sp.trektellen = {
+        observations: obsList,
+        count,
+        totalQuantile: predictQuantile(
+          count,
           // historical is birds/h: scale by the day's non-night hours to get a daily total
           sp.historical[0].quantiles?.map((q) => q * sp.historical[0].window.nHours),
           sp.quantile_levels
-        );
-      }
+        ),
+      };
     }
-  } catch (e) {
-    console.error("Error fetching Trektellen data:", e);
   }
 
-  // Always reset loading state
-  isLoadingData.value = false;
+  // Keep the user's collapsed/expanded choice across date changes
+  const collapsed = new Map(species.value.map((sp) => [sp.species, sp.collapsed]));
+  list.forEach((sp) => (sp.collapsed = collapsed.get(sp.species) ?? false));
+
+  species.value = list;
+  weather.value = weatherData;
 }
 
 /**
@@ -585,9 +597,7 @@ async function updateSpeciesData(dateStr) {
 function changeDateByDays(days) {
   if (isLoadingData.value) return;
 
-  const newDate = new Date(selectedDate.value);
-  newDate.setDate(newDate.getDate() + days);
-  const newDateStr = newDate.toISOString().split("T")[0];
+  const newDateStr = addDays(selectedDate.value, days);
 
   // Only update if new date doesn't exceed today
   if (newDateStr <= todaysDate.value) {
@@ -606,20 +616,32 @@ function toggleAllSpecies() {
 }
 
 // Lifecycle hooks
-onMounted(() => {
-  // Handle URL parameters on initial load FIRST
-  const urlParams = new URLSearchParams(window.location.search);
-  handleUrlParameters(urlParams);
+function onPopstate() {
+  handleUrlParameters(new URLSearchParams(window.location.search));
+}
 
-  // Now update species data with the correct date
-  updateSpeciesData(selectedDate.value);
+// "Today" moves on at midnight in Paris: refresh it when the tab comes back or periodically
+function refreshToday() {
+  todaysDate.value = localDateString();
+}
+let todayTimer;
+
+onMounted(() => {
+  // A date from the URL triggers the selectedDate watcher, which loads the data
+  const initialDate = selectedDate.value;
+  handleUrlParameters(new URLSearchParams(window.location.search));
+  if (selectedDate.value === initialDate) updateSpeciesData(initialDate);
 
   // Handle browser back/forward navigation
-  window.addEventListener("popstate", () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    handleUrlParameters(urlParams);
-    console.log("Popstate event: date set to", selectedDate.value, "locale set to", locale.value);
-  });
+  window.addEventListener("popstate", onPopstate);
+  document.addEventListener("visibilitychange", refreshToday);
+  todayTimer = setInterval(refreshToday, 10 * 60 * 1000);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("popstate", onPopstate);
+  document.removeEventListener("visibilitychange", refreshToday);
+  clearInterval(todayTimer);
 });
 
 /**
@@ -628,43 +650,44 @@ onMounted(() => {
  */
 function handleUrlParameters(urlParams) {
   const supportedLocales = LANGUAGE_OPTIONS.map((lang) => lang.code);
-  const today = new Date().toISOString().split("T")[0];
 
-  // Handle date parameter
+  // Handle date parameter; no (valid) date means today
   const dateParam = urlParams.get("date");
-  if (dateParam && dateParam <= today && !isNaN(new Date(dateParam))) {
-    selectedDate.value = dateParam;
-  }
+  const validDate =
+    /^\d{4}-\d{2}-\d{2}$/.test(dateParam ?? "") &&
+    !isNaN(new Date(dateParam)) &&
+    dateParam <= todaysDate.value;
+  selectedDate.value = validDate ? dateParam : todaysDate.value;
 
   // Handle language parameter
   const langParam = urlParams.get("lang");
   if (langParam && supportedLocales.includes(langParam) && locale.value !== langParam) {
-    console.log("Setting locale from URL parameter:", langParam);
     locale.value = langParam;
     updateLocale(langParam);
   }
 }
 
+/**
+ * Push a history entry for a new date/language, unless the URL already says so (initial load,
+ * back/forward): pushing then would add an entry on every back press and trap the user.
+ */
+function pushUrl(param, value, isDefault) {
+  const url = new URL(window.location);
+  const current = url.searchParams.get(param);
+  if (current === value || (current === null && isDefault)) return;
+  url.searchParams.set(param, value);
+  window.history.pushState({ date: selectedDate.value, lang: locale.value }, "", url);
+}
+
 // Watchers
 watch(selectedDate, (newDate) => {
-  console.log("Selected date changed to", newDate);
   updateSpeciesData(newDate);
-  const url = new URL(window.location);
-  url.searchParams.set("date", newDate);
-  window.history.pushState({ date: newDate, lang: locale.value }, "", url);
+  pushUrl("date", newDate, newDate === todaysDate.value);
 });
 
 watch(locale, (newLocale) => {
-  console.log("Locale changed to", newLocale);
   updateLocale(newLocale);
-  const url = new URL(window.location);
-  url.searchParams.set("lang", newLocale);
-  // Preserve existing date parameter if it exists
-  const currentDate = url.searchParams.get("date");
-  if (!currentDate) {
-    url.searchParams.set("date", selectedDate.value);
-  }
-  window.history.pushState({ date: selectedDate.value, lang: newLocale }, "", url);
+  pushUrl("lang", newLocale, false);
 });
 </script>
 

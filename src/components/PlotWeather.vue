@@ -180,9 +180,9 @@ function buildSeries() {
       const val = row[h];
       if (val === null || val === undefined) continue;
       const ts = new Date(baseDate);
-      // time[h] assumed hour-of-day; fallback h
+      // time[h] is the UTC hour of day (fallback h); the date axis shows browser-local time
       const hourNum = Number.isFinite(time[h]) ? time[h] : h;
-      ts.setHours(hourNum, 0, 0, 0);
+      ts.setUTCHours(hourNum, 0, 0, 0);
       x.push(ts);
       y.push(val);
     }

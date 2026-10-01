@@ -93,6 +93,8 @@ const messages = {
       nextDay: "Next day",
       today: "Today",
       close: "Close",
+      noForecast: "No forecast is available for this date, or the forecast server could not be reached.",
+      outOfSeason: "No species to show for this date: it is outside the migration season (mid-July to November) or all species are below the threshold set in the settings.",
     },
     species: {
       "Common Buzzard": "Common Buzzard",
@@ -192,6 +194,8 @@ const messages = {
       nextDay: "Jour suivant",
       today: "Aujourd'hui",
       close: "Fermer",
+      noForecast: "Aucune prévision n'est disponible pour cette date, ou le serveur de prévisions est injoignable.",
+      outOfSeason: "Aucune espèce à afficher pour cette date : elle est hors de la saison de migration (mi-juillet à novembre) ou toutes les espèces sont sous le seuil défini dans les paramètres.",
     },
     species: {
       "Common Buzzard": "Buse variable",
@@ -292,6 +296,8 @@ const messages = {
       nextDay: "Nächster Tag",
       today: "Heute",
       close: "Schließen",
+      noForecast: "Für dieses Datum ist keine Prognose verfügbar, oder der Prognoseserver ist nicht erreichbar.",
+      outOfSeason: "Für dieses Datum gibt es keine Arten anzuzeigen: Es liegt außerhalb der Zugsaison (Mitte Juli bis November) oder alle Arten liegen unter dem in den Einstellungen festgelegten Schwellenwert.",
     },
     species: {
       "Common Buzzard": "Mäusebussard",

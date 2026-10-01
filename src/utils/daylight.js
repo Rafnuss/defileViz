@@ -68,3 +68,16 @@ export function localUtcOffset(date) {
     .find((p) => p.type === "timeZoneName").value; // e.g. "GMT+2"
   return Number(name.replace("GMT", "") || 0);
 }
+
+/** Calendar date "YYYY-MM-DD" in Europe/Paris (the count site's local day). */
+export function localDateString(date = new Date()) {
+  // en-CA formats as YYYY-MM-DD
+  return new Intl.DateTimeFormat("en-CA", { timeZone: LOCAL_TIME_ZONE }).format(date);
+}
+
+/** Add `days` to a "YYYY-MM-DD" string, in UTC so the browser's time zone never matters. */
+export function addDays(dateStr, days) {
+  const d = new Date(dateStr);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
