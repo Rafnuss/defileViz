@@ -3,7 +3,7 @@
     <div class="container">
       <!-- Brand -->
       <a class="navbar-brand d-flex align-items-center mb-0 h1" href="#">
-        <img src="/defile_logo.png" alt="Défilé de l'Ecluse" class="me-2" height="36" />
+        <img src="/defile_logo_72.webp" alt="Défilé de l'Ecluse" class="me-2" width="36" height="36" />
         {{ $t("nav.title") }}
       </a>
 

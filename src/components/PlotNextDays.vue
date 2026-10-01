@@ -8,7 +8,7 @@
 <script setup>
 import { ref, onMounted, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-dist-min";
+import Plotly from "plotly.js-basic-dist-min";
 import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
 
 const { t } = useI18n();

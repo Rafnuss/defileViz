@@ -38,7 +38,7 @@
 <script setup>
 import { ref, onMounted, watch, nextTick, computed, inject } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-dist-min";
+import Plotly from "plotly.js-basic-dist-min";
 import { Tooltip } from "bootstrap";
 import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
 import { localUtcOffset } from "../utils/daylight";

@@ -41,7 +41,7 @@
 <script setup>
 import { ref, watch, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-dist-min";
+import Plotly from "plotly.js-basic-dist-min";
 
 const { t } = useI18n();
 
