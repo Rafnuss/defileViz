@@ -24,9 +24,9 @@
       <label class="form-label mb-0 small d-inline-flex align-items-center gap-1">
         <span>{{ $t("weather.days") }}</span>
         <input
+          v-model.number="durationDays"
           type="number"
           class="form-control form-control-sm w-auto"
-          v-model.number="durationDays"
           :min="1"
           :max="maxDays"
         />
@@ -40,10 +40,7 @@
 
 <script setup>
 import { ref, watch, computed, onMounted, onBeforeUnmount } from "vue";
-import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-basic-dist-min";
-
-const { t } = useI18n();
 
 const props = defineProps({
   weather: { type: Object, required: true },
@@ -143,7 +140,7 @@ const currentVarMeta = computed(() => (selectedVar.value ? weatherMeta[selectedV
 const variableList = computed(() =>
   Object.keys(props.weather || {})
     .filter((k) => !["dates", "time"].includes(k))
-    .filter((k) => Array.isArray(props.weather[k]))
+    .filter((k) => Array.isArray(props.weather[k])),
 );
 
 const maxDays = computed(() => props.weather?.dates?.length || 0);
@@ -158,7 +155,7 @@ watch(
     durationDays.value = Math.min(durationDays.value, maxDays.value || 1);
     render();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch([selectedVar, durationDays], () => render());

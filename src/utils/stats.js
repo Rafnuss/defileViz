@@ -101,7 +101,7 @@ export function createHistoricalLineTrace(
   color,
   dash = "solid",
   label = "",
-  smooth = true
+  smooth = true,
 ) {
   if (
     baseValue == null ||

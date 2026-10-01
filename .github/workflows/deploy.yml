@@ -27,9 +27,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install, Test and Build 🔧
+      - name: Install, Lint, Test and Build 🔧
         run: |
           npm ci
+          npm run lint
+          npm run format:check
           npm test
           npm run build
 

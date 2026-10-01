@@ -204,7 +204,7 @@ async function createPlot() {
 
 watch(
   () => [visible.value, props.season, props.totalPredicted, props.totalObserved, props.date],
-  createPlot
+  createPlot,
 );
 </script>
 

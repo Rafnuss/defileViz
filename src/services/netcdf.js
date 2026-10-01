@@ -35,54 +35,54 @@ export async function fetchNetCDF(dateStr, speciesName, variableNames = ["pred_l
   const speciesNameUnderscored = speciesName.replace(/ /g, "_");
   const url = `https://defile.raphaelnussbaumer.com/forecasts/${speciesNameUnderscored}/${dateStr.replace(
     /-/g,
-    ""
+    "",
   )}_${speciesNameUnderscored}.nc`;
 
   const nc = await loadReader(url);
 
-    const variables = Array.isArray(variableNames) ? variableNames : [variableNames];
-    if (variables.length === 0) return {};
+  const variables = Array.isArray(variableNames) ? variableNames : [variableNames];
+  if (variables.length === 0) return {};
 
-    const nDates = nc.dimensions.find((d) => d.name === "date")?.size ?? 0;
-    const nHours = nc.dimensions.find((d) => d.name === "time")?.size ?? 0;
-    if (!nDates || !nHours) throw new Error(`Missing dimensions in NetCDF for ${speciesName}`);
+  const nDates = nc.dimensions.find((d) => d.name === "date")?.size ?? 0;
+  const nHours = nc.dimensions.find((d) => d.name === "time")?.size ?? 0;
+  if (!nDates || !nHours) throw new Error(`Missing dimensions in NetCDF for ${speciesName}`);
 
-    let dates = [];
+  let dates = [];
+  try {
+    const dateVar = nc.getDataVariable("date");
+    const dateVarMeta = nc.variables.find((v) => v.name === "date");
+    const unitsAttr = dateVarMeta?.attributes?.find((a) => a.name === "units");
+    if (unitsAttr && Array.isArray(dateVar)) {
+      const baseStr = unitsAttr.value.replace("days since ", "").split(" ")[0];
+      const baseDate = new Date(baseStr);
+      dates = dateVar.map((offset) => {
+        const d = new Date(baseDate);
+        d.setUTCDate(d.getUTCDate() + Math.round(offset));
+        return d;
+      });
+    }
+  } catch (e) {
+    console.warn("Failed to parse date variable:", e);
+  }
+
+  const time = nc.getDataVariable("time");
+
+  const result = { dates, time };
+
+  for (const variable of variables) {
+    let flat;
     try {
-      const dateVar = nc.getDataVariable("date");
-      const dateVarMeta = nc.variables.find((v) => v.name === "date");
-      const unitsAttr = dateVarMeta?.attributes?.find((a) => a.name === "units");
-      if (unitsAttr && Array.isArray(dateVar)) {
-        const baseStr = unitsAttr.value.replace("days since ", "").split(" ")[0];
-        const baseDate = new Date(baseStr);
-        dates = dateVar.map((offset) => {
-          const d = new Date(baseDate);
-          d.setUTCDate(d.getUTCDate() + Math.round(offset));
-          return d;
-        });
-      }
+      flat = nc.getDataVariable(variable);
     } catch (e) {
-      console.warn("Failed to parse date variable:", e);
+      console.warn(`Variable ${variable} missing in NetCDF for ${speciesName}`);
+      result[variable] = [];
+      continue;
     }
 
-    const time = nc.getDataVariable("time");
+    result[variable] = Array.from({ length: nDates }, (_, k) =>
+      flat.slice(k * nHours, (k + 1) * nHours),
+    );
+  }
 
-    const result = { dates, time };
-
-    for (const variable of variables) {
-      let flat;
-      try {
-        flat = nc.getDataVariable(variable);
-      } catch (e) {
-        console.warn(`Variable ${variable} missing in NetCDF for ${speciesName}`);
-        result[variable] = [];
-        continue;
-      }
-
-      result[variable] = Array.from({ length: nDates }, (_, k) =>
-        flat.slice(k * nHours, (k + 1) * nHours)
-      );
-    }
-
-    return result;
+  return result;
 }

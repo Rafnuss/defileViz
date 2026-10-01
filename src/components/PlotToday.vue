@@ -51,7 +51,6 @@ const props = defineProps({
   date: { type: [String, Date], required: true },
 });
 
-const ID_MEDIAN = inject("ID_MEDIAN");
 const ID_LOWER = inject("ID_LOWER");
 const ID_UPPER = inject("ID_UPPER");
 
@@ -94,7 +93,7 @@ async function createPlot() {
       "transparent",
       "solid",
       "",
-      true
+      true,
     );
     const upperTrace = createHistoricalLineTrace(
       xHours,
@@ -103,7 +102,7 @@ async function createPlot() {
       "transparent",
       "solid",
       "",
-      true
+      true,
     );
 
     if (lowerTrace && upperTrace) {
@@ -139,7 +138,7 @@ async function createPlot() {
     "black",
     "solid",
     t("plots.median"),
-    true
+    true,
   );
   if (medianTrace) allTraces.push(medianTrace);
 
@@ -201,7 +200,7 @@ async function createPlot() {
         name: t("plots.trektellenObservations"),
         customdata: trektellenData.map((d) => hourLabel(d.hour)),
         hovertemplate: `%{customdata}<br>${t("table.counted")}: %{y} ${t(
-          "plots.birds"
+          "plots.birds",
         )}<extra></extra>`,
       };
       allTraces.push(trektellenTrace);
@@ -249,8 +248,8 @@ async function createPlot() {
 }
 
 function getSignificance(quantile) {
-  let color = "black";
-  let explanation = "";
+  let color;
+  let explanation;
 
   const percentile = Math.round(quantile);
 
@@ -310,7 +309,7 @@ watch(
   () => {
     createPlot();
     initializeTooltips();
-  }
+  },
 );
 </script>
 

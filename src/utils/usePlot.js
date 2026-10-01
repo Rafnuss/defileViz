@@ -26,7 +26,7 @@ export function usePlot(elRef) {
           observer.disconnect();
         }
       },
-      { rootMargin: "300px" }
+      { rootMargin: "300px" },
     );
     observer.observe(elRef.value);
   });

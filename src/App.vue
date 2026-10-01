@@ -3,7 +3,13 @@
     <div class="container">
       <!-- Brand -->
       <a class="navbar-brand d-flex align-items-center mb-0 h1" href="#">
-        <img src="/defile_logo_72.webp" alt="Défilé de l'Ecluse" class="me-2" width="36" height="36" />
+        <img
+          src="/defile_logo_72.webp"
+          alt="Défilé de l'Ecluse"
+          class="me-2"
+          width="36"
+          height="36"
+        />
         {{ $t("nav.title") }}
       </a>
 
@@ -11,15 +17,15 @@
       <div class="d-none d-lg-flex mx-auto align-items-center">
         <button
           class="btn btn-outline-light btn-sm me-2"
-          @click="changeDateByDays(-1)"
           :disabled="isLoadingData"
           :title="$t('common.previousDay')"
+          @click="changeDateByDays(-1)"
         >
           <i class="bi bi-chevron-left"></i>
         </button>
         <input
-          type="date"
           v-model="selectedDate"
+          type="date"
           :disabled="isLoadingData"
           :max="todaysDate"
           class="form-control form-control-sm text-center w-auto"
@@ -28,9 +34,9 @@
         <button
           v-show="!isToday"
           class="btn btn-outline-light btn-sm ms-2"
-          @click="changeDateByDays(1)"
           :disabled="isLoadingData"
           :title="$t('common.nextDay')"
+          @click="changeDateByDays(1)"
         >
           <i class="bi bi-chevron-right"></i>
         </button>
@@ -63,22 +69,22 @@
       </button>
 
       <!-- Collapsible navbar content -->
-      <div class="collapse navbar-collapse" id="navbarNav">
+      <div id="navbarNav" class="collapse navbar-collapse">
         <!-- Mobile date selector -->
         <div
           class="d-lg-none d-flex justify-content-center align-items-center py-3 border-bottom border-light border-opacity-25 mb-3"
         >
           <button
             class="btn btn-outline-light btn-sm me-2"
-            @click="changeDateByDays(-1)"
             :disabled="isLoadingData"
             :title="$t('common.previousDay')"
+            @click="changeDateByDays(-1)"
           >
             <i class="bi bi-chevron-left"></i>
           </button>
           <input
-            type="date"
             v-model="selectedDate"
+            type="date"
             :disabled="isLoadingData"
             :max="todaysDate"
             class="form-control form-control-sm text-center w-auto"
@@ -87,9 +93,9 @@
           <button
             v-show="!isToday"
             class="btn btn-outline-light btn-sm ms-2"
-            @click="changeDateByDays(1)"
             :disabled="isLoadingData"
             :title="$t('common.nextDay')"
+            @click="changeDateByDays(1)"
           >
             <i class="bi bi-chevron-right"></i>
           </button>
@@ -166,10 +172,7 @@
   <div class="container">
     <IntroSection />
 
-    <TodayTable
-      v-if="species && species.length > 0"
-      :species="todayRows"
-    />
+    <TodayTable v-if="species && species.length > 0" :species="todayRows" />
     <div v-if="loadError && !isLoadingData" class="alert alert-warning" role="alert">
       {{ $t("common.noForecast") }}
     </div>
@@ -182,7 +185,7 @@
     </div>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2 class="mb-0">{{ $t("plots.hourlyPrediction") }}</h2>
-      <button class="btn btn-outline-secondary btn-sm" @click="toggleAllSpecies" type="button">
+      <button class="btn btn-outline-secondary btn-sm" type="button" @click="toggleAllSpecies">
         <i :class="allCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
         {{ allCollapsed ? $t("plots.expandAll") : $t("plots.collapseAll") }}
       </button>
@@ -192,10 +195,10 @@
         <div class="card h-100">
           <div
             class="card-header d-flex justify-content-between align-items-center"
-            @click="sp.collapsed = !sp.collapsed"
             style="cursor: pointer"
+            @click="sp.collapsed = !sp.collapsed"
           >
-            <h5 class="card-title my-0 d-flex align-items-center" :id="sp.species">
+            <h5 :id="sp.species" class="card-title my-0 d-flex align-items-center">
               <img
                 :src="`/defileViz/species_icon/${sp.species
                   .toLowerCase()
@@ -218,7 +221,7 @@
           </div>
           <div v-if="!sp.collapsed" class="card-body">
             <div class="row">
-              <div class="col-6" v-if="plotOptions.find((p) => p.name === 'today').show">
+              <div v-if="plotOptions.find((p) => p.name === 'today').show" class="col-6">
                 <PlotToday
                   v-if="sp.historical[0]"
                   :historical="sp.historical[0]"
@@ -227,7 +230,7 @@
                   :date="sp.date[0]"
                 />
               </div>
-              <div class="col-6" v-if="plotOptions.find((p) => p.name === 'nextDays').show">
+              <div v-if="plotOptions.find((p) => p.name === 'nextDays').show" class="col-6">
                 <PlotNextDays
                   v-if="
                     sp.historical &&
@@ -240,14 +243,14 @@
                   :date="sp.date.slice(1, nextDaysLength + 1)"
                 />
               </div>
-              <div class="col-12" v-if="plotOptions.find((p) => p.name === 'season').show">
+              <div v-if="plotOptions.find((p) => p.name === 'season').show" class="col-12">
                 <PlotSeason
                   v-if="sp"
                   :season="species_doy_statistics.find((s) => s.species === sp.species)"
                   :date="sp.date[0]"
-                  :totalPredicted="sp.forecast[0]?.predTotal"
-                  :totalObserved="sp.trektellen?.count"
-                  :speciesName="sp.species"
+                  :total-predicted="sp.forecast[0]?.predTotal"
+                  :total-observed="sp.trektellen?.count"
+                  :species-name="sp.species"
                 />
               </div>
             </div>
@@ -262,9 +265,9 @@
 
   <!-- Settings Modal -->
   <div
+    id="settingsModal"
     class="modal fade"
     tabindex="-1"
-    id="settingsModal"
     aria-labelledby="exampleModalLabel"
     aria-hidden="true"
   >
@@ -283,7 +286,7 @@
           <!-- Plot selection -->
           <div class="mb-3 form-group">
             <label for="plots">{{ $t("settings.plotsToDisplay") }}</label>
-            <div class="btn-group w-100" role="group" aria-label="Plot type selector" id="plots">
+            <div id="plots" class="btn-group w-100" role="group" aria-label="Plot type selector">
               <button
                 v-for="plot in plotOptions"
                 :key="plot.name"
@@ -300,27 +303,29 @@
           <div class="mb-3 form-group">
             <label for="thr">{{ $t("settings.threshold") }}</label>
             <input
+              id="thr"
+              v-model.number="medianThreshold"
               type="number"
               step="1"
               min="0"
               max="100"
-              v-model.number="medianThreshold"
-              id="thr"
               class="form-control"
               aria-describedby="thrHelp"
             />
-            <small id="thrHelp" class="form-text text-muted">{{ $t("settings.thresholdHelp") }}</small>
+            <small id="thrHelp" class="form-text text-muted">{{
+              $t("settings.thresholdHelp")
+            }}</small>
           </div>
           <!-- Next days length -->
           <div class="mb-3 form-group">
             <label for="nextDays">{{ $t("settings.nextDaysCount") }}</label>
             <input
+              id="nextDays"
+              v-model.number="nextDaysLength"
               type="number"
               step="1"
               min="1"
               max="7"
-              v-model.number="nextDaysLength"
-              id="nextDays"
               class="form-control"
               aria-describedby="nextDaysHelp"
             />
@@ -331,7 +336,7 @@
           <!-- Sort selection -->
           <div class="mb-3 form-group">
             <label for="sortOption" class="form-label">{{ $t("settings.sortBy") }}</label>
-            <select v-model="sortOption" class="form-select" id="sortOption">
+            <select id="sortOption" v-model="sortOption" class="form-select">
               <option value="taxonomy">{{ $t("settings.taxonomy") }}</option>
               <option value="median">{{ $t("settings.median") }}</option>
               <option value="predicted">{{ $t("settings.predicted") }}</option>
@@ -410,7 +415,7 @@ const plotOptions = ref(
   ["today", "nextDays", "season"].map((name) => ({
     name,
     show: savedSettings.plots?.[name] ?? true,
-  }))
+  })),
 );
 const medianThreshold = ref(savedSettings.medianThreshold ?? 0);
 const nextDaysLength = ref(savedSettings.nextDaysLength ?? 4);
@@ -431,7 +436,7 @@ watch(
       // Storage blocked (private mode): settings just aren't remembered
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Computed properties
@@ -441,7 +446,7 @@ const speciesDisplay = computed(() => {
   const filtered = species.value.filter(
     (sp) =>
       sp.historical[0]?.median &&
-      sp.historical[0].median * sp.historical[0].window.nHours > medianThreshold.value
+      sp.historical[0].median * sp.historical[0].window.nHours > medianThreshold.value,
   );
 
   const sortFunctions = {
@@ -450,11 +455,11 @@ const speciesDisplay = computed(() => {
       [...filtered].sort((a, b) => (b.historical[0]?.median || 0) - (a.historical[0]?.median || 0)),
     predicted: () =>
       [...filtered].sort(
-        (a, b) => (b.forecast[0]?.predTotal || 0) - (a.forecast[0]?.predTotal || 0)
+        (a, b) => (b.forecast[0]?.predTotal || 0) - (a.forecast[0]?.predTotal || 0),
       ),
     quantile: () =>
       [...filtered].sort(
-        (a, b) => (b.forecast[0]?.predTotalQuantile || 0) - (a.forecast[0]?.predTotalQuantile || 0)
+        (a, b) => (b.forecast[0]?.predTotalQuantile || 0) - (a.forecast[0]?.predTotalQuantile || 0),
       ),
   };
 
@@ -486,7 +491,7 @@ const todayRows = computed(() =>
     historical: sp.historical[0],
     forecast: sp.forecast[0],
     trektellen: sp.trektellen,
-  }))
+  })),
 );
 
 const allCollapsed = computed(() => {
@@ -554,7 +559,7 @@ async function loadSpeciesData(dateStr, isStale) {
       const varsData = await fetchNetCDF(dateStr, sp.species, ["pred_log_hourly_count"]);
       // Apply transform locally: pred_log_hourly_count is exp(x) - 1
       const forecastData = (varsData.pred_log_hourly_count || []).map((row) =>
-        row.map((x) => Math.exp(x) - 1)
+        row.map((x) => Math.exp(x) - 1),
       );
       if (!forecastData.length || !forecastData[0]?.length) throw new Error("No forecast data");
 
@@ -564,11 +569,11 @@ async function loadSpeciesData(dateStr, isStale) {
           predTotal,
           // historical is birds/h: scale by that day's non-night hours to get a daily total
           sp.historical[idx]?.quantiles?.map((q) => q * sp.historical[idx].window.nHours),
-          sp.quantile_levels
+          sp.quantile_levels,
         );
         return { predHourlyCount: arr, predTotal, predTotalQuantile };
       });
-    })
+    }),
   );
 
   const weatherPromise = fetchNetCDF(dateStr, "Osprey", WEATHER_VARIABLES).catch((e) => {
@@ -603,7 +608,7 @@ async function loadSpeciesData(dateStr, isStale) {
           count,
           // historical is birds/h: scale by the day's non-night hours to get a daily total
           sp.historical[0].quantiles?.map((q) => q * sp.historical[0].window.nHours),
-          sp.quantile_levels
+          sp.quantile_levels,
         ),
       };
     }

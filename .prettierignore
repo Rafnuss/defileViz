@@ -1,0 +1,4 @@
+dist
+package-lock.json
+src/species_doy_statistics.json
+data

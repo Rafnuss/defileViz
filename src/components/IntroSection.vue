@@ -34,10 +34,6 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useI18n } from "vue-i18n";
-
-// i18n setup
-const { t } = useI18n();
 
 // Internal state for intro visibility with localStorage persistence
 const showIntro = ref(true);

@@ -21,7 +21,6 @@ const props = defineProps({
   date: { type: Array, required: true },
 });
 
-const ID_MEDIAN = inject("ID_MEDIAN");
 const ID_LOWER = inject("ID_LOWER");
 const ID_UPPER = inject("ID_UPPER");
 
@@ -98,7 +97,7 @@ async function createPlot() {
         "transparent",
         "solid",
         "",
-        true
+        true,
       );
       const upperTrace = createHistoricalLineTrace(
         xDay,
@@ -107,7 +106,7 @@ async function createPlot() {
         "transparent",
         "solid",
         "",
-        true
+        true,
       );
 
       if (lowerTrace && upperTrace) {
@@ -141,7 +140,7 @@ async function createPlot() {
         "black",
         "solid",
         t("plots.median"),
-        true
+        true,
       );
 
       if (medianTrace) {
@@ -198,7 +197,7 @@ async function createPlot() {
 // Each load creates new prop objects, so a shallow watch is enough
 watch(
   () => [visible.value, props.historical, props.forecast, props.date, locale.value],
-  createPlot
+  createPlot,
 );
 </script>
 

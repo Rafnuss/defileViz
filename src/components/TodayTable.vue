@@ -19,14 +19,14 @@
     <table class="table table-striped table-bordered table-sm align-middle">
       <thead class="table-light">
         <tr>
-          <th @click="setSort('species')" style="cursor: pointer">
+          <th style="cursor: pointer" @click="setSort('species')">
             {{ $t("table.species") }}
             <span v-if="sortKey === 'species'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
           <th
             class="text-end equal-width-col"
-            @click="setSort('trektellenCount')"
             style="cursor: pointer"
+            @click="setSort('trektellenCount')"
           >
             <img
               src="/trektellen_logo.png"
@@ -39,24 +39,24 @@
           </th>
           <th
             class="text-end equal-width-col"
-            @click="setSort('totalPredicted')"
             style="cursor: pointer"
+            @click="setSort('totalPredicted')"
           >
             {{ $t("table.predicted") }}
             <span v-if="sortKey === 'totalPredicted'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
           <th
             class="text-end equal-width-col"
-            @click="setSort('totalMedian')"
             style="cursor: pointer"
+            @click="setSort('totalMedian')"
           >
             {{ $t("table.historical") }}
             <span v-if="sortKey === 'totalMedian'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
           </th>
           <th
             class="text-end equal-width-col"
-            @click="setSort('totalQuantile')"
             style="cursor: pointer"
+            @click="setSort('totalQuantile')"
           >
             {{ $t("table.quantile") }}
             <span v-if="sortKey === 'totalQuantile'">{{ sortOrder === "asc" ? "▲" : "▼" }}</span>
@@ -119,7 +119,7 @@ const popoverContent = computed(
    <b>${t("table.observed")}</b>: ${t("table.explanation.observed")}<br>
    <b>${t("table.predicted")}</b>: ${t("table.explanation.predicted")}<br>
    <b>${t("table.quantile")}</b>: ${t("table.explanation.quantile")}<br>
-   <b>${t("table.historical")}</b>: ${t("table.explanation.historicalMedian")}`
+   <b>${t("table.historical")}</b>: ${t("table.explanation.historicalMedian")}`,
 );
 
 onMounted(() => {
@@ -142,8 +142,8 @@ const enrichedspecies = computed(() =>
     const hourly = Array.isArray(forecast)
       ? forecast
       : Array.isArray(forecast?.predHourlyCount)
-      ? forecast.predHourlyCount
-      : [];
+        ? forecast.predHourlyCount
+        : [];
     // Totals / derived values
     const totalPredicted =
       forecast && forecast.predTotal !== undefined
@@ -162,7 +162,7 @@ const enrichedspecies = computed(() =>
       totalQuantile,
       trektellenCount,
     };
-  })
+  }),
 );
 
 // replace usage of props.species with enrichedspecies
