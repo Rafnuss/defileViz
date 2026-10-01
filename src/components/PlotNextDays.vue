@@ -9,7 +9,7 @@
 import { ref, onMounted, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-dist-min";
-import { createHistoricalLineTrace } from "../utils/stats";
+import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
 
 const { t } = useI18n();
 
@@ -80,10 +80,10 @@ async function createPlot() {
   // Historical per-day grey band (Q25–Q75) and black median line, modulated by per-hour ratio
   for (let d = 0; d < nDays; d++) {
     const dayStart = d * hoursPerDay;
-    const dayLen = hoursPerDay;
-    const xDay = Array.from({ length: dayLen }, (_, h) => dayStart + 6 + h + 0.5);
     const hist = historical?.[d] || {};
-    const ratio = Array.isArray(hist?.ratio) ? hist.ratio.slice(0, dayLen) : Array(dayLen).fill(1);
+    // Historical profile over that day's non-night UTC hours, aligned with the forecast bars
+    const { hours, ratio } = ratioInWindow(hist?.ratio, hist?.window);
+    const xDay = hours.map((h) => dayStart + h + 0.5);
 
     // Grey band Q25–Q75 if available (using smooth traces)
     if (hist?.quantiles != null) {

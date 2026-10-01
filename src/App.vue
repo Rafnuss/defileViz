@@ -219,6 +219,7 @@
                   :historical="sp.historical[0]"
                   :forecast="sp.forecast[0]"
                   :trektellen="sp.trektellen"
+                  :date="sp.date[0]"
                 />
               </div>
               <div class="col-6" v-if="plotOptions.find((p) => p.name === 'nextDays').show">
@@ -351,6 +352,7 @@ const species_doy_statistics = species_doy_statistics0.filter(
 
 // Stats functions
 import { predictQuantile } from "./utils/stats";
+import { dayWindow } from "./utils/daylight";
 
 // Fetcher service
 import { fetchNetCDF } from "./services/netcdf";
@@ -366,7 +368,6 @@ import IntroSection from "./components/IntroSection.vue";
 import Footer from "./components/Footer.vue";
 
 // Constants
-const N_HOURS = 12;
 const QUANTILE_LEVELS = species_doy_statistics[0]?.quantile_levels || [
   1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99,
 ];
@@ -374,7 +375,6 @@ const ID_MEDIAN = QUANTILE_LEVELS.indexOf(50);
 const ID_LOWER = QUANTILE_LEVELS.indexOf(20);
 const ID_UPPER = QUANTILE_LEVELS.indexOf(80);
 
-provide("N_HOURS", N_HOURS);
 provide("ID_MEDIAN", ID_MEDIAN);
 provide("ID_LOWER", ID_LOWER);
 provide("ID_UPPER", ID_UPPER);
@@ -406,7 +406,9 @@ const isToday = computed(() => selectedDate.value === todaysDate.value);
 
 const speciesDisplay = computed(() => {
   const filtered = species.value.filter(
-    (sp) => sp.historical[0]?.median && sp.historical[0]?.median * N_HOURS > medianThreshold.value
+    (sp) =>
+      sp.historical[0]?.median &&
+      sp.historical[0].median * sp.historical[0].window.nHours > medianThreshold.value
   );
 
   const sortFunctions = {
@@ -474,7 +476,9 @@ async function updateSpeciesData(dateStr) {
         max: sds.max?.[idx] ?? null,
         mean: sds.mean?.[idx] ?? null,
         ratio: sds.ratio?.[idx] ?? null,
-        median: sds.quantiles?.[idx][id_median] ?? null,
+        median: sds.quantiles?.[idx]?.[id_median] ?? null,
+        // Non-night UTC hours of that day, same rule as the forecast model's night mask
+        window: dayWindow(d2),
       });
     }
 
@@ -496,7 +500,8 @@ async function updateSpeciesData(dateStr) {
 
         const predTotalQuantile = predictQuantile(
           predTotal,
-          sp.historical[idx].quantiles.map((q) => q * N_HOURS), // historical is per hour, scale to total
+          // historical is birds/h: scale by that day's non-night hours to get a daily total
+          sp.historical[idx]?.quantiles?.map((q) => q * sp.historical[idx].window.nHours),
           sp.quantile_levels
         );
         return {
@@ -559,7 +564,8 @@ async function updateSpeciesData(dateStr) {
         }
         sp.trektellen.totalQuantile = predictQuantile(
           sp.trektellen.count,
-          sp.historical[0].quantiles.map((q) => q * N_HOURS), // historical is per hour, scale to total
+          // historical is birds/h: scale by the day's non-night hours to get a daily total
+          sp.historical[0].quantiles?.map((q) => q * sp.historical[0].window.nHours),
           sp.quantile_levels
         );
       }

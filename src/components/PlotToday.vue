@@ -40,7 +40,8 @@ import { ref, onMounted, watch, nextTick, computed, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-dist-min";
 import { Tooltip } from "bootstrap";
-import { createHistoricalLineTrace } from "../utils/stats";
+import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
+import { localUtcOffset } from "../utils/daylight";
 
 const { t } = useI18n();
 
@@ -48,6 +49,7 @@ const props = defineProps({
   historical: { type: Object, required: true },
   forecast: { type: Object, required: false },
   trektellen: { type: Object, required: false },
+  date: { type: [String, Date], required: true },
 });
 
 const ID_MEDIAN = inject("ID_MEDIAN");
@@ -68,23 +70,21 @@ async function createPlot() {
   Plotly.purge(plotDiv.value);
   const allTraces = [];
 
-  // Get number of hours from historical ratio data, fallback to forecast length or default 15
-  const ratio = historical?.ratio;
+  // x is the UTC hour (as in the forecast NetCDF); ticks and hover labels show local time.
+  // The window is the day's non-night hours, where the forecast model can predict birds.
+  const window = historical.window;
+  const offset = localUtcOffset(props.date);
+  const localHour = (utcHour) => (((utcHour + offset) % 24) + 24) % 24;
+  const hourLabel = (utcHour) => `${localHour(utcHour)}h-${localHour(utcHour + 1)}h`;
+
+  // Historical hourly profile, drawn over non-night hours only
+  const { hours: ratioHours, ratio } = ratioInWindow(historical?.ratio, window);
+  const xHours = ratioHours.map((h) => h + 0.5);
   const predCount = forecast?.predHourlyCount;
-  const nHours = ratio?.length || predCount?.length || 15;
-  const xHours = Array.from({ length: nHours }, (_, i) => i + 6.5);
 
   // 1. HISTORICAL DATA FIRST (always available - base layer)
 
   // Grey band between lower and upper
-  const lower =
-    historical?.quantiles != null
-      ? ratio.map((r) => (r == null ? 1 : r) * historical.quantiles[ID_LOWER])
-      : null;
-  const upper =
-    historical?.quantiles != null
-      ? ratio.map((r) => (r == null ? 1 : r) * historical.quantiles[ID_UPPER])
-      : null;
   if (historical?.quantiles != null && ID_LOWER != null && ID_UPPER != null) {
     // Create smooth lower and upper bounds
     const lowerTrace = createHistoricalLineTrace(
@@ -151,7 +151,7 @@ async function createPlot() {
       type: "bar",
       text: predCount.map((v) => v.toFixed(1)),
       textposition: "auto",
-      customdata: Array.from({ length: predCount.length }, (_, i) => `${i}h-${i + 1}h`),
+      customdata: Array.from({ length: predCount.length }, (_, i) => hourLabel(i)),
       hovertemplate: `%{customdata}<br>${t("plots.forecast")}: %{y:.0f}<extra></extra>`,
       width: 1,
       name: t("plots.forecast"),
@@ -164,11 +164,12 @@ async function createPlot() {
   if (trektellen?.observations) {
     const observations = trektellen.observations;
 
-    // Group observations by hour and sum counts
+    // Group observations by UTC hour and sum counts. Trektellen timestamps are local time.
     const hourlyTotals = {};
     observations.forEach((obs) => {
-      const timeStr = obs.timestamp; // "17:47:00"
-      const [hours] = timeStr.split(":").map(Number);
+      const timeStr = obs.timestamp; // "17:47:00", Europe/Paris
+      const [localHours] = timeStr.split(":").map(Number);
+      const hours = localHours - offset;
       const count = parseInt(obs.left, 10) || 0;
 
       if (count > 0) {
@@ -198,7 +199,7 @@ async function createPlot() {
           line: { color: "rgba(220, 53, 69, 1)", width: 2 },
         },
         name: t("plots.trektellenObservations"),
-        customdata: trektellenData.map((d) => `${d.hour}h-${d.hour + 1}h`),
+        customdata: trektellenData.map((d) => hourLabel(d.hour)),
         hovertemplate: `%{customdata}<br>${t("table.counted")}: %{y} ${t(
           "plots.birds"
         )}<extra></extra>`,
@@ -207,12 +208,19 @@ async function createPlot() {
     }
   }
 
+  // Ticks on even local hours across the non-night window
+  const tickvals = [];
+  for (let h = window.first; h <= window.last + 1; h++) {
+    if (localHour(h) % 2 === 0) tickvals.push(h);
+  }
+
   const layout = {
     xaxis: {
       title: t("plots.hour"),
-      tickvals: [0, 3, 6, 9, 12, 15, 18, 21],
-      ticktext: ["0h", "3h", "6h", "9h", "12h", "15h", "18h", "21h"],
-      range: [6, 18],
+      tickvals,
+      ticktext: tickvals.map((h) => `${localHour(h)}h`),
+      // First to last non-night hour, plus half an hour either side
+      range: [window.first - 0.5, window.last + 1.5],
       fixedrange: true,
     },
     yaxis: {

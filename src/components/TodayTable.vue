@@ -144,14 +144,14 @@ const enrichedspecies = computed(() =>
       : Array.isArray(forecast?.predHourlyCount)
       ? forecast.predHourlyCount
       : [];
-    const hours = hourly.length || 15;
     // Totals / derived values
     const totalPredicted =
       forecast && forecast.predTotal !== undefined
         ? forecast.predTotal
         : hourly.reduce((s, v) => s + (v || 0), 0);
+    // Historical median is birds/h: scale by the day's non-night hours
     const totalMedian =
-      r.historical?.median !== undefined ? r.historical.median * hours : undefined;
+      r.historical?.median != null ? r.historical.median * r.historical.window.nHours : undefined;
     const totalQuantile =
       forecast && forecast.predTotalQuantile !== undefined ? forecast.predTotalQuantile : undefined;
     const trektellenCount = r.trektellen?.count ?? null; // added

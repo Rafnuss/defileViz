@@ -14,6 +14,7 @@
 import { ref, onMounted, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-dist-min";
+import { dayWindow } from "../utils/daylight";
 
 const { t } = useI18n();
 
@@ -28,7 +29,6 @@ const props = defineProps({
 const ID_MEDIAN = inject("ID_MEDIAN");
 const ID_LOWER = inject("ID_LOWER");
 const ID_UPPER = inject("ID_UPPER");
-const N_HOURS = inject("N_HOURS");
 
 const plotDiv = ref(null);
 
@@ -45,11 +45,11 @@ async function createPlot() {
   // Extract data from season object
   const doy = season.doy;
 
-  // Convert per-hour values to per-day totals by multiplying by N_HOURS
-  const mean = season.mean.map((m) => m * N_HOURS);
-  const lower = season.quantiles.map((q) => q[ID_LOWER] * N_HOURS);
-  const upper = season.quantiles.map((q) => q[ID_UPPER] * N_HOURS);
-  const median = season.quantiles.map((q) => q[ID_MEDIAN] * N_HOURS);
+  // Convert per-hour rates to per-day totals: each day uses its own number of non-night hours
+  const nHours = doy.map((d) => dayWindow(d).nHours);
+  const lower = season.quantiles.map((q, i) => q[ID_LOWER] * nHours[i]);
+  const upper = season.quantiles.map((q, i) => q[ID_UPPER] * nHours[i]);
+  const median = season.quantiles.map((q, i) => q[ID_MEDIAN] * nHours[i]);
   const totalObs = season.count_observations
     ? season.count_observations.reduce((sum, count) => sum + count, 0)
     : 0;

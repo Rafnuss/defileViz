@@ -63,6 +63,25 @@ export function predictQuantile(value, quantileValues, quantileLevels) {
   return Math.max(0, Math.min(100, interpolatedLevel));
 }
 
+// UTC hour of `ratio[0]` in species_doy_statistics.json: the ratio covers 04-18 UTC
+// (`RATIO_HOURS` in defile-migration-forecast's src/phenology.py).
+export const RATIO_FIRST_HOUR = 4;
+
+/**
+ * The historical hourly ratio restricted to a day's non-night hours.
+ *
+ * @param {Array<number>} ratio - Hourly ratio for one day, starting at RATIO_FIRST_HOUR UTC
+ * @param {{first: number, last: number}} window - Non-night UTC hours (see utils/daylight.js)
+ * @returns {{hours: Array<number>, ratio: Array<number>}} UTC hours and their ratio
+ */
+export function ratioInWindow(ratio, window) {
+  if (!Array.isArray(ratio) || !window) return { hours: [], ratio: [] };
+  const first = Math.max(window.first, RATIO_FIRST_HOUR);
+  const last = Math.min(window.last, RATIO_FIRST_HOUR + ratio.length - 1);
+  const hours = Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i);
+  return { hours, ratio: hours.map((h) => ratio[h - RATIO_FIRST_HOUR]) };
+}
+
 /**
  * Creates a smooth historical line trace for Plotly using hourly ratios and base values.
  *
