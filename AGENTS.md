@@ -11,3 +11,6 @@ After editing, run: `npm run format && npm run lint && npm test && npm run build
 - `src/species_doy_statistics.json` is synced verbatim from defile-migration-forecast; don't edit
   or reformat it (it is rounded at build time in `vite.config.js`).
 - Dates are "YYYY-MM-DD" days in Europe/Paris; NetCDF hours are UTC.
+- The Explore page (`#explore`, `src/components/explore/`) reads `public/data/explore/`, copied
+  verbatim from defile-migration-forecast's `data/explore/` (`python scripts/build_explore.py`
+  there documents each file). Don't edit it here; rebuild there and copy.

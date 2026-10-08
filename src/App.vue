@@ -14,7 +14,7 @@
       </a>
 
       <!-- Date selector (desktop: center, mobile: below brand) -->
-      <div class="d-none d-lg-flex mx-auto align-items-center">
+      <div v-if="page === 'forecast'" class="d-none d-lg-flex mx-auto align-items-center">
         <button
           class="btn btn-outline-light btn-sm me-2"
           :disabled="isLoadingData"
@@ -72,6 +72,7 @@
       <div id="navbarNav" class="collapse navbar-collapse">
         <!-- Mobile date selector -->
         <div
+          v-if="page === 'forecast'"
           class="d-lg-none d-flex justify-content-center align-items-center py-3 border-bottom border-light border-opacity-25 mb-3"
         >
           <button
@@ -114,6 +115,16 @@
 
         <!-- Navigation links -->
         <ul class="navbar-nav ms-auto align-items-lg-center text-center">
+          <li class="nav-item">
+            <a class="nav-link" :class="{ active: page === 'forecast' }" href="#">{{
+              $t("nav.forecast")
+            }}</a>
+          </li>
+          <li class="nav-item me-lg-2">
+            <a class="nav-link" :class="{ active: page === 'explore' }" href="#explore">{{
+              $t("nav.explore")
+            }}</a>
+          </li>
           <!-- Language Switcher -->
           <li class="nav-item">
             <div class="d-flex align-items-center">
@@ -169,7 +180,10 @@
     </div>
   </nav>
 
-  <div class="container">
+  <div v-if="page === 'explore'" class="container">
+    <ExplorePage :initial-taxon="exploreTaxon" @select="onExploreSelect" />
+  </div>
+  <div v-else class="container">
     <IntroSection />
 
     <TodayTable v-if="species && species.length > 0" :species="todayRows" />
@@ -376,6 +390,7 @@ import TodayTable from "./components/TodayTable.vue";
 import PlotWeather from "./components/PlotWeather.vue";
 import IntroSection from "./components/IntroSection.vue";
 import Footer from "./components/Footer.vue";
+import ExplorePage from "./components/explore/ExplorePage.vue";
 
 // Constants
 const QUANTILE_LEVELS = species_doy_statistics[0]?.quantile_levels || [
@@ -391,6 +406,27 @@ provide("ID_UPPER", ID_UPPER);
 
 // i18n setup
 const { locale } = useI18n();
+
+// Page from the URL hash: "#explore" or "#explore/<taxon_id>" is the Explore page, anything
+// else (including species anchors) the forecast.
+const parseHash = () => {
+  const m = window.location.hash.match(/^#explore(?:\/(.+))?$/);
+  return m
+    ? { page: "explore", taxon: m[1] ? decodeURIComponent(m[1]) : null }
+    : { page: "forecast", taxon: null };
+};
+const page = ref(parseHash().page);
+const exploreTaxon = ref(parseHash().taxon);
+const onHashChange = () => {
+  const h = parseHash();
+  page.value = h.page;
+  if (h.taxon) exploreTaxon.value = h.taxon;
+};
+const onExploreSelect = (id) => {
+  const hash = `#explore/${encodeURIComponent(id)}`;
+  if (window.location.hash !== hash) history.replaceState(null, "", hash);
+};
+window.addEventListener("hashchange", onHashChange);
 
 // Reactive data
 const species = ref([]);
