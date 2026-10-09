@@ -409,6 +409,7 @@ const dayZone = computed(() =>
   dayShift.value > 1.2 ? t("explore.when.summer") : t("explore.when.winter"),
 );
 const changeLabel = (c) => {
+  if (c == null) return "–";
   const r = c + 1;
   if (!isFinite(r)) return "–";
   return r >= 2 || r <= 0.5
