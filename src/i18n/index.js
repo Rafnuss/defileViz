@@ -1,4 +1,5 @@
 import { createI18n } from "vue-i18n";
+import exploreMessages from "./explore";
 
 // Supported locales
 export const LANGUAGE_OPTIONS = [
@@ -393,6 +394,12 @@ const initializeLocale = () => {
 
 // Initialize the locale immediately
 const initialLocale = initializeLocale();
+
+// Merge the Explore page's messages into each locale
+for (const [code, extra] of Object.entries(exploreMessages)) {
+  messages[code].nav = { ...messages[code].nav, ...extra.nav };
+  messages[code].explore = extra.explore;
+}
 
 // Create i18n instance with the detected locale
 const i18n = createI18n({

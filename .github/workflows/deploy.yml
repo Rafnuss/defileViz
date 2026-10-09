@@ -33,6 +33,7 @@ jobs:
           npm run lint
           npm run format:check
           npm test
+          npm run explore:fetch
           npm run build
 
       - name: Upload Pages artifact
