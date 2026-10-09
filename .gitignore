@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# The Explore export, fetched from defile-explore (npm run explore:fetch / explore:local)
+public/data/explore/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

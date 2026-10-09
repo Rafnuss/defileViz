@@ -11,6 +11,8 @@ After editing, run: `npm run format && npm run lint && npm test && npm run build
 - `src/species_doy_statistics.json` is synced verbatim from defile-migration-forecast; don't edit
   or reformat it (it is rounded at build time in `vite.config.js`).
 - Dates are "YYYY-MM-DD" days in Europe/Paris; NetCDF hours are UTC.
-- The Explore page (`#explore`, `src/components/explore/`) reads `public/data/explore/`, copied
-  verbatim from defile-migration-forecast's `data/explore/` (`python scripts/build_explore.py`
-  there documents each file). Don't edit it here; rebuild there and copy.
+- The Explore page (`#explore`, `src/components/explore/`) reads `public/data/explore/`, not in
+  git: `npm run explore:fetch` downloads it from the defile-explore release named in
+  `scripts/fetch-explore.mjs` (as deploy.yml does), `npm run explore:local` copies a local build
+  of `../defile-explore/data/explore` to try it first (`python scripts/build_explore.py` there
+  documents each file). Don't edit it here; rebuild there, publish there, and deploy.
