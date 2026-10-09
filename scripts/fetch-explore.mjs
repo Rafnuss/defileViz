@@ -4,7 +4,7 @@
 //   node scripts/fetch-explore.mjs                                       # release EXPLORE_RELEASE
 //   node scripts/fetch-explore.mjs --from ../defile-explore/data/explore # a local build
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -16,6 +16,7 @@ const OUT = "public/data/explore";
 
 const from = process.argv.indexOf("--from");
 rmSync(OUT, { recursive: true, force: true });
+mkdirSync(OUT, { recursive: true }); // public/data/ is not in a fresh checkout
 if (from > 0) {
   cpSync(process.argv[from + 1], OUT, { recursive: true });
 } else {
