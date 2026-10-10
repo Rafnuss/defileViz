@@ -376,13 +376,10 @@ const species_doy_statistics = species_doy_statistics0
   .filter((sp) => sp.species !== "Merlin")
   .sort((a, b) => taxonomicRank(a.species) - taxonomicRank(b.species));
 
-// Stats functions
-import { predictQuantile } from "./utils/stats";
-import { dayWindow, dayOfYear, localDateString, addDays } from "./utils/daylight";
-
-// Fetcher service
-import { fetchNetCDF } from "./services/netcdf";
-import { fetchTrektellenData } from "./services/trektellen";
+import { localDateString, addDays } from "./utils/daylight";
+import { loadSpeciesData } from "./services/forecast";
+import { useSettings } from "./composables/useSettings";
+import { useHashRoute } from "./composables/useHashRoute";
 
 // Component imports
 import PlotToday from "./components/PlotToday.vue";
@@ -411,27 +408,7 @@ provide("ID_UPPER", ID_UPPER);
 // i18n setup
 const { locale } = useI18n();
 
-// Page from the URL hash: "#explore" or "#explore/<taxon_id>" is the Explore page, anything
-// else (including species anchors) the forecast.
-const parseHash = () => {
-  // eslint-disable-next-line security/detect-unsafe-regex -- linear: single optional group
-  const m = window.location.hash.match(/^#explore(?:\/(.+))?$/);
-  return m
-    ? { page: "explore", taxon: m[1] ? decodeURIComponent(m[1]) : null }
-    : { page: "forecast", taxon: null };
-};
-const page = ref(parseHash().page);
-const exploreTaxon = ref(parseHash().taxon);
-const onHashChange = () => {
-  const h = parseHash();
-  page.value = h.page;
-  if (h.taxon) exploreTaxon.value = h.taxon;
-};
-const onExploreSelect = (id) => {
-  const hash = `#explore/${encodeURIComponent(id)}`;
-  if (window.location.hash !== hash) history.replaceState(null, "", hash);
-};
-window.addEventListener("hashchange", onHashChange);
+const { page, exploreTaxon, onExploreSelect } = useHashRoute();
 
 // Reactive data
 const species = ref([]);
@@ -442,43 +419,7 @@ const selectedDate = ref(todaysDate.value);
 const isLoadingData = ref(false);
 const loadError = ref(null);
 
-// UI state
-// Settings, remembered in localStorage
-const SETTINGS_KEY = "defile-settings";
-const savedSettings = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
-  } catch {
-    return {};
-  }
-})();
-const plotOptions = ref(
-  ["today", "nextDays", "season"].map((name) => ({
-    name,
-    show: savedSettings.plots?.[name] ?? true,
-  })),
-);
-const medianThreshold = ref(savedSettings.medianThreshold ?? 0);
-const nextDaysLength = ref(savedSettings.nextDaysLength ?? 4);
-const sortOption = ref(savedSettings.sortOption ?? "taxonomy");
-
-watch(
-  [plotOptions, medianThreshold, nextDaysLength, sortOption],
-  () => {
-    const settings = {
-      plots: Object.fromEntries(plotOptions.value.map((p) => [p.name, p.show])),
-      medianThreshold: medianThreshold.value,
-      nextDaysLength: nextDaysLength.value,
-      sortOption: sortOption.value,
-    };
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    } catch {
-      // Storage blocked (private mode): settings just aren't remembered
-    }
-  },
-  { deep: true },
-);
+const { plotOptions, medianThreshold, nextDaysLength, sortOption } = useSettings();
 
 // Computed properties
 const isToday = computed(() => selectedDate.value === todaysDate.value);
@@ -507,25 +448,6 @@ const speciesDisplay = computed(() => {
   return sortFunctions[sortOption.value]() || filtered;
 });
 
-const WEATHER_VARIABLES = [
-  "temperature_2m",
-  "dewpoint_temperature_2m",
-  "total_precipitation",
-  "surface_pressure",
-  "u_component_of_wind_10m",
-  "v_component_of_wind_10m",
-  "u_component_of_wind_100m",
-  "v_component_of_wind_100m",
-  "instantaneous_10m_wind_gust",
-  "high_cloud_cover",
-  "low_cloud_cover",
-  "medium_cloud_cover",
-  "total_cloud_cover",
-  "surface_solar_radiation_downwards",
-  "sun_altitude",
-  "sun_azimuth",
-];
-
 const todayRows = computed(() =>
   species.value.map((sp) => ({
     species: sp.species,
@@ -551,109 +473,20 @@ async function updateSpeciesData(dateStr) {
   isLoadingData.value = true;
   loadError.value = null;
   try {
-    await loadSpeciesData(dateStr, () => myLoad !== loadId);
+    await loadData(dateStr, () => myLoad !== loadId);
   } finally {
     if (myLoad === loadId) isLoadingData.value = false;
   }
 }
 
-async function loadSpeciesData(dateStr, isStale) {
-  const doy = dayOfYear(dateStr);
-  const maxDays = 14; // Limit to 14 days max
-  const list = species_doy_statistics.map((sds) => {
-    const sp = {
-      species: sds.species,
-      trektellen_species_id: sds.trektellen_species_id,
-      quantile_levels: sds.quantile_levels,
-      collapsed: false,
-      date: [],
-      historical: [],
-      forecast: [],
-      trektellen: {},
-    };
-    const id_median = sp.quantile_levels.indexOf(50);
-
-    for (let i = 0; i < maxDays; i++) {
-      const d2 = new Date(addDays(dateStr, i));
-      sp.date.push(d2);
-
-      // Historical stats only cover the season: outside it every field is null
-      const idx = sds.doy.indexOf(doy + i);
-      const at = (arr) => (idx >= 0 ? (arr?.[idx] ?? null) : null);
-      sp.historical.push({
-        quantiles: at(sds.quantiles),
-        min: at(sds.min),
-        max: at(sds.max),
-        mean: at(sds.mean),
-        ratio: at(sds.ratio),
-        median: at(sds.quantiles)?.[id_median] ?? null,
-        // Non-night UTC hours of that day, same rule as the forecast model's night mask
-        window: dayWindow(d2),
-      });
-    }
-    return sp;
-  });
-
-  // Forecasts, weather and Trektellen counts are independent: fetch them in parallel
-  const forecastsPromise = Promise.allSettled(
-    list.map(async (sp) => {
-      const varsData = await fetchNetCDF(dateStr, sp.species, ["pred_log_hourly_count"]);
-      // Apply transform locally: pred_log_hourly_count is exp(x) - 1
-      const forecastData = (varsData.pred_log_hourly_count || []).map((row) =>
-        row.map((x) => Math.exp(x) - 1),
-      );
-      if (!forecastData.length || !forecastData[0]?.length) throw new Error("No forecast data");
-
-      sp.forecast = forecastData.map((arr, idx) => {
-        const predTotal = (arr || []).reduce((x, y) => x + (y ?? 0), 0);
-        const predTotalQuantile = predictQuantile(
-          predTotal,
-          // historical is birds/h: scale by that day's non-night hours to get a daily total
-          sp.historical[idx]?.quantiles?.map((q) => q * sp.historical[idx].window.nHours),
-          sp.quantile_levels,
-        );
-        return { predHourlyCount: arr, predTotal, predTotalQuantile };
-      });
-    }),
-  );
-
-  const weatherPromise = fetchNetCDF(dateStr, "Osprey", WEATHER_VARIABLES).catch((e) => {
-    console.error("Error fetching weather data:", e);
-    return null;
-  });
-
-  const trektellenPromise = fetchTrektellenData(dateStr).catch((e) => {
-    console.error("Error fetching Trektellen data:", e);
-    return null;
-  });
-
-  const [forecasts, weatherData, bySpecies] = await Promise.all([
-    forecastsPromise,
-    weatherPromise,
-    trektellenPromise,
-  ]);
+async function loadData(dateStr, isStale) {
+  const {
+    list,
+    weather: weatherData,
+    noForecast,
+  } = await loadSpeciesData(dateStr, species_doy_statistics);
   if (isStale()) return;
-
-  const failed = forecasts.filter((r) => r.status === "rejected");
-  failed.forEach((r) => console.error("Failed to fetch forecast:", r.reason));
-  if (failed.length === forecasts.length) loadError.value = "noForecast";
-
-  if (bySpecies && Object.keys(bySpecies).length > 0) {
-    for (const sp of list) {
-      const obsList = bySpecies[String(sp.trektellen_species_id)] || [];
-      const count = obsList.reduce((sum, o) => sum + (o?.left ?? 0), 0);
-      sp.trektellen = {
-        observations: obsList,
-        count,
-        totalQuantile: predictQuantile(
-          count,
-          // historical is birds/h: scale by the day's non-night hours to get a daily total
-          sp.historical[0].quantiles?.map((q) => q * sp.historical[0].window.nHours),
-          sp.quantile_levels,
-        ),
-      };
-    }
-  }
+  if (noForecast) loadError.value = "noForecast";
 
   // Keep the user's collapsed/expanded choice across date changes
   const collapsed = new Map(species.value.map((sp) => [sp.species, sp.collapsed]));
