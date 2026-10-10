@@ -43,5 +43,14 @@ export default defineConfig({
   build: {
     outDir: "dist",
     assetsDir: "assets",
+    chunkSizeWarningLimit: 1200, // the Plotly chunk (~1.1 MB) is the known large one
+    rolldownOptions: {
+      output: {
+        // Plotly is ~1 MB and rarely changes: its own chunk stays cached across deploys
+        codeSplitting: {
+          groups: [{ name: "plotly", test: /node_modules[\\/]plotly/, priority: 20 }],
+        },
+      },
+    },
   },
 });

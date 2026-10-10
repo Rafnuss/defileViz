@@ -366,7 +366,7 @@
 
 <script setup>
 // Vue imports
-import { ref, computed, watch, onMounted, onUnmounted, provide } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, provide, defineAsyncComponent } from "vue";
 import { useI18n } from "vue-i18n";
 import { LANGUAGE_OPTIONS, updateLocale } from "./i18n";
 
@@ -393,7 +393,8 @@ import PlotWeather from "./components/PlotWeather.vue";
 import { taxonomicRank } from "./utils/taxonomy.js";
 import IntroSection from "./components/IntroSection.vue";
 import Footer from "./components/Footer.vue";
-import ExplorePage from "./components/explore/ExplorePage.vue";
+// Explore is only needed on #explore: keep it (and KaTeX) out of the forecast page's first load
+const ExplorePage = defineAsyncComponent(() => import("./components/explore/ExplorePage.vue"));
 
 // Constants
 const QUANTILE_LEVELS = species_doy_statistics[0]?.quantile_levels || [
@@ -413,6 +414,7 @@ const { locale } = useI18n();
 // Page from the URL hash: "#explore" or "#explore/<taxon_id>" is the Explore page, anything
 // else (including species anchors) the forecast.
 const parseHash = () => {
+  // eslint-disable-next-line security/detect-unsafe-regex -- linear: single optional group
   const m = window.location.hash.match(/^#explore(?:\/(.+))?$/);
   return m
     ? { page: "explore", taxon: m[1] ? decodeURIComponent(m[1]) : null }
