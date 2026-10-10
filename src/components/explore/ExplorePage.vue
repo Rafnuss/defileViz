@@ -7,9 +7,10 @@
       <div class="card-body">
         <div class="picker-wrap mx-auto">
           <SpeciesPicker v-model="taxonId" :taxa="options" />
+          <TaxonMembers v-if="taxon" :taxon="taxon" :taxa="taxa" @select="(id) => (taxonId = id)" />
           <div v-if="data" class="links d-flex flex-wrap justify-content-center gap-1 mt-2">
             <a
-              v-for="(url, k) in data.links"
+              v-for="(url, k) in links"
               :key="k"
               :href="url"
               target="_blank"
@@ -27,7 +28,6 @@
             :label="$t('explore.account.passage')"
             :text="account('passage')"
           />
-          <p v-else class="small text-muted mb-0 text-center">{{ $t("explore.account.none") }}</p>
         </div>
       </div>
     </div>
@@ -298,6 +298,9 @@ import {
   doyLabel,
   doyDate,
   taxonName,
+  isGroup,
+  LINKS,
+  linksOf,
   solarShift,
   clock,
   fate,
@@ -314,6 +317,7 @@ import ClaimNote from "./ClaimNote.vue";
 import MethodFlow from "./MethodFlow.vue";
 import MethodModal from "./methods/MethodModal.vue";
 import SpeciesPicker from "./SpeciesPicker.vue";
+import TaxonMembers from "./TaxonMembers.vue";
 import FigureHead from "./FigureHead.vue";
 
 const { t, locale } = useI18n();
@@ -326,16 +330,6 @@ const emit = defineEmits(["select"]);
 
 const DEFAULT_TAXON = "Red Kite";
 const RECORDS = 10;
-// External pages of the taxon (defile-explore `settings.LINK_TEMPLATES`), with an icon each
-const LINKS = {
-  ebird: { label: "eBird", icon: "bi-binoculars" },
-  ebird_status: { label: "eBird abundance map", icon: "bi-map" },
-  birds_of_the_world: { label: "Birds of the World", icon: "bi-book" },
-  ebba2: { label: "European atlas (EBBA2)", icon: "bi-grid-3x3" },
-  trektellen: { label: "Trektellen", icon: "bi-graph-up" },
-  vogelwarte: { label: "Vogelwarte", icon: "bi-house" },
-  migration_atlas: { label: "Migration Atlas", icon: "bi-arrow-left-right" },
-};
 
 const taxa = ref([]);
 const taxonId = ref(props.initialTaxon);
@@ -348,6 +342,12 @@ const openMethod = (topic, section) => method.value?.open(topic, section);
 // Full-tier taxa: those counted on enough days for a page
 const options = computed(() => taxa.value.filter((tx) => tx.tier === "full"));
 const taxon = computed(() => taxa.value.find((tx) => tx.taxon_id === taxonId.value));
+// The taxon's external pages; a group's Trektellen graph is of one of its ids only, so not shown
+const links = computed(() => {
+  const all = data.value?.links ?? {};
+  return group.value ? linksOf({ ...taxon.value, links: all }) : all;
+});
+const group = computed(() => taxon.value && isGroup(taxon.value));
 const trend = computed(() => data.value?.trend ?? null);
 // The season block from the trend's gap-filled days (defile-explore `season.source`), else counts
 const seasonFilled = computed(() => data.value?.season?.source === "gam");
@@ -607,7 +607,7 @@ watch(
   border-color: var(--bs-primary-border-subtle);
 }
 .picker-wrap {
-  max-width: 44rem;
+  max-width: 56rem;
 }
 .account {
   max-width: 50rem;

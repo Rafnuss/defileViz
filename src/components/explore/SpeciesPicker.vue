@@ -35,13 +35,26 @@
             {{ f.label }} <span class="chip-n">{{ f.n }}</span>
           </button>
         </div>
-        <div class="d-flex align-items-center justify-content-between gap-2 mt-1">
-          <span class="small text-muted">
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+          <span class="small text-muted me-auto">
             <template v-if="query">{{
               $t("explore.picker.searchAll", { n: list.length })
             }}</template>
             <template v-else>{{ filterHelp }}</template>
           </span>
+          <div class="form-check form-switch small mb-0" :title="$t('explore.picker.groupsHelp')">
+            <input
+              id="pickerGroups"
+              v-model="showGroups"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              @mousedown.prevent
+            />
+            <label class="form-check-label" for="pickerGroups" @mousedown.prevent>
+              {{ $t("explore.picker.groups") }}
+            </label>
+          </div>
           <div class="btn-group btn-group-sm" role="group">
             <button
               v-for="s in SORTS"
@@ -71,6 +84,9 @@
             {{ taxonName(tx, locale) }}
             <span class="sci">{{ tx.scientific_name }}</span>
           </span>
+          <span v-if="isGroup(tx)" class="group-tag" :title="$t('explore.picker.groupsHelp')">{{
+            $t("explore.picker.groupOf", { n: tx.members.length - 1 })
+          }}</span>
           <span class="birds" :title="$t('explore.picker.birdsTitle')">{{ birds(tx) }}</span>
         </li>
         <li v-if="!list.length" class="empty text-muted small">
@@ -89,7 +105,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
-import { taxonName } from "../../services/explore";
+import { taxonName, isGroup } from "../../services/explore";
 
 const { t, locale } = useI18n();
 
@@ -114,6 +130,22 @@ const query = ref("");
 const filter = ref("highlight");
 const sort = ref("taxonomic");
 const cursor = ref(0);
+// Groups ("harrier sp.", "Red/Black Kite") are hidden unless asked for; remembered per viewer
+const GROUPS_KEY = "explore.showGroups";
+const showGroups = ref(false);
+try {
+  showGroups.value = localStorage.getItem(GROUPS_KEY) === "1";
+} catch {
+  /* storage unavailable: groups stay hidden */
+}
+watch(showGroups, (on) => {
+  try {
+    localStorage.setItem(GROUPS_KEY, on ? "1" : "0");
+  } catch {
+    /* not remembered */
+  }
+});
+const pool = computed(() => props.taxa.filter((tx) => showGroups.value || !isGroup(tx)));
 
 const inFilter = (tx, f) =>
   f === "all" ? true : f === "highlight" ? tx.highlight : tx.group === f;
@@ -121,7 +153,7 @@ const filters = computed(() =>
   FILTERS.map((key) => ({
     key,
     label: t(`explore.picker.filter.${key}`),
-    n: props.taxa.filter((tx) => inFilter(tx, key)).length,
+    n: pool.value.filter((tx) => inFilter(tx, key)).length,
   })).filter((f) => f.n > 0),
 );
 const filterHelp = computed(() => t(`explore.picker.help.${filter.value}`));
@@ -131,10 +163,10 @@ const fold = (s) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCa
 const list = computed(() => {
   const q = fold(query.value.trim());
   const rows = q
-    ? props.taxa.filter((tx) =>
+    ? pool.value.filter((tx) =>
         [tx.english_name, tx.french_name, tx.scientific_name].some((n) => fold(n).includes(q)),
       )
-    : props.taxa.filter((tx) => inFilter(tx, filter.value));
+    : pool.value.filter((tx) => inFilter(tx, filter.value));
   return [...rows].sort((a, b) =>
     sort.value === "common"
       ? (b.season_birds ?? 0) - (a.season_birds ?? 0)
@@ -156,6 +188,7 @@ const birds = (tx) => {
 function openList() {
   if (open.value) return;
   open.value = true;
+  if (selected.value && isGroup(selected.value)) showGroups.value = true;
   // Open on the filter holding the species shown
   if (selected.value && !inFilter(selected.value, filter.value)) filter.value = "all";
   nextTick(() => {
@@ -275,14 +308,14 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onOutside));
   z-index: 1050;
   top: calc(100% + 4px);
   left: 0;
-  width: max(100%, min(38rem, calc(100vw - 2rem)));
+  width: 100%;
   background: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
   overflow: hidden;
 }
 .picker-tools {
-  padding: 0.5rem;
+  padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--bs-border-color);
 }
 .chip {
@@ -297,14 +330,14 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onOutside));
   list-style: none;
   margin: 0;
   padding: 0.25rem 0;
-  max-height: 22rem;
+  max-height: min(26rem, 60vh);
   overflow-y: auto;
 }
 .picker-list li {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0.75rem;
+  padding: 0.2rem 0.75rem;
   cursor: pointer;
 }
 .picker-list li.active {
@@ -327,6 +360,14 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onOutside));
   font-size: 0.8em;
   color: var(--bs-secondary-color);
   font-variant-numeric: tabular-nums;
+}
+.group-tag {
+  flex: none;
+  font-size: 0.75em;
+  color: var(--bs-secondary-color);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 1rem;
+  padding: 0 0.45rem;
 }
 .story {
   display: inline-block;

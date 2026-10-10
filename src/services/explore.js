@@ -33,6 +33,26 @@ export function doyLabel(doy, locale) {
 export const taxonName = (taxon, locale) =>
   (locale === "fr" && taxon.french_name) || taxon.english_name;
 
+// External pages of the taxon (defile-explore `settings.LINK_TEMPLATES`), with an icon each
+export const LINKS = {
+  ebird: { label: "eBird", icon: "bi-binoculars" },
+  ebird_status: { label: "eBird abundance map", icon: "bi-map" },
+  birds_of_the_world: { label: "Birds of the World", icon: "bi-book" },
+  ebba2: { label: "European atlas (EBBA2)", icon: "bi-grid-3x3" },
+  trektellen: { label: "Trektellen", icon: "bi-graph-up" },
+  vogelwarte: { label: "Vogelwarte", icon: "bi-house" },
+  migration_atlas: { label: "Migration Atlas", icon: "bi-arrow-left-right" },
+};
+
+/** A group taxon ("harrier sp.", "Red/Black Kite"): read as the sum of everything in `members`. */
+export const isGroup = (taxon) => taxon.taxon_rank === "spuh" || taxon.taxon_rank === "slash";
+
+/** The taxon's links (taxa.json `links`): a group's Trektellen graph is of one of its ids only. */
+export function linksOf(taxon) {
+  const { trektellen, ...rest } = taxon.links ?? {};
+  return isGroup(taxon) || !trektellen ? rest : { ...rest, trektellen };
+}
+
 // --- solar time -------------------------------------------------------------------------------
 // The export gives hours of the day in local apparent solar time (hour 12 starts at the sun's
 // transit over the Défilé, defile-explore `export.solar_shift`). The page shows clock time: the
