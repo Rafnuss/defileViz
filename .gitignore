@@ -34,5 +34,5 @@ Thumbs.db
 *.sln
 *.sw?
 
-
-data/*.claude/
+# Claude Code: share .claude/launch.json and settings.json, keep personal settings local
+.claude/settings.local.json
