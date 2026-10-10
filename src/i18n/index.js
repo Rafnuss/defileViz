@@ -32,6 +32,10 @@ const messages = {
       predicted: "Predicted",
       historical: "Historical Median",
       quantile: "Quantile",
+      percentile: "percentile",
+      modeNumber: "Numbers",
+      modeQuantile: "Quantile",
+      distribution: "Historical distribution",
       explanation: {
         title: "Table columns explained",
         species: "Bird species name",
@@ -39,6 +43,8 @@ const messages = {
         predicted: "Predicted total number of individuals expected species (from 6am to 7pm)",
         quantile:
           "How species's prediction compares to past years (e.g., 90th means higher than 90% of previous years for this date)",
+        distribution:
+          "Where the predicted and counted totals fall among past years for this date: light band 5–95%, dark band 20–80%, tick = median. Numbers use a log scale; Quantile shows the percentile directly.",
         historicalMedian: "Typical (median) count for this date in past years",
       },
     },
@@ -140,6 +146,10 @@ const messages = {
       predicted: "Prédites",
       historical: "Médiane Historique",
       quantile: "Quantile",
+      percentile: "percentile",
+      modeNumber: "Nombres",
+      modeQuantile: "Quantile",
+      distribution: "Distribution historique",
       explanation: {
         title: "Explication des colonnes du tableau",
         species: "Nom de l'espèce d'oiseau",
@@ -147,6 +157,8 @@ const messages = {
         predicted: "Nombre total prédit d'individus attendus pour l'espèce (de 6h à 19h)",
         quantile:
           "Comment la prédiction de l'espèce se compare aux années passées (ex: 90e signifie plus élevé que 90% des années précédentes pour cette date)",
+        distribution:
+          "Position des totaux prédit et compté parmi les années passées à cette date : bande claire 5–95 %, bande foncée 20–80 %, trait = médiane. Les nombres sont en échelle logarithmique ; Quantile montre directement le percentile.",
         historicalMedian: "Comptage typique (médian) pour cette date dans les années passées",
       },
     },
@@ -250,6 +262,10 @@ const messages = {
       predicted: "Vorhergesagt",
       historical: "Historischer Median",
       quantile: "Quantil",
+      percentile: "Perzentil",
+      modeNumber: "Zahlen",
+      modeQuantile: "Quantil",
+      distribution: "Historische Verteilung",
       explanation: {
         title: "Tabellenspalten erklärt",
         species: "Vogelartname",
@@ -257,6 +273,8 @@ const messages = {
         predicted: "Vorhergesagte Gesamtzahl der erwarteten Individuen der Art (von 6 bis 19 Uhr)",
         quantile:
           "Wie sich die Vorhersage der Art im Vergleich zu vergangenen Jahren verhält (z.B. 90. bedeutet höher als 90% der Vorjahre für dieses Datum)",
+        distribution:
+          "Wo die vorhergesagte und die gezählte Summe im Vergleich zu früheren Jahren an diesem Datum liegen: helles Band 5–95 %, dunkles Band 20–80 %, Strich = Median. Zahlen auf logarithmischer Skala; Quantil zeigt direkt das Perzentil.",
         historicalMedian: "Typische (mediane) Zählung für dieses Datum in vergangenen Jahren",
       },
     },

@@ -10,7 +10,9 @@ export async function fetchTrektellenData(dateStr, siteId = 2422) {
   if (!dateStr) throw new Error("dateStr is required");
 
   const yyyymmdd = dateStr.replace(/-/g, "");
-  const url = `https://defile.raphaelnussbaumer.com/trektellen/${siteId}/${yyyymmdd}`;
+  // In dev, go through the Vite proxy (vite.config.js): the server only allows the production origin
+  const host = import.meta.env.DEV ? "" : "https://defile.raphaelnussbaumer.com";
+  const url = `${host}/trektellen/${siteId}/${yyyymmdd}`;
 
   const response = await fetch(url, {
     headers: {

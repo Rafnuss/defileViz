@@ -186,7 +186,7 @@
   <div v-else class="container">
     <IntroSection />
 
-    <TodayTable v-if="species && species.length > 0" :species="todayRows" />
+    <TodayOverview v-if="species && species.length > 0" :species="todayRows" />
     <div v-if="loadError && !isLoadingData" class="alert alert-warning" role="alert">
       {{ $t("common.noForecast") }}
     </div>
@@ -372,7 +372,9 @@ import { LANGUAGE_OPTIONS, updateLocale } from "./i18n";
 
 // Species data
 import species_doy_statistics0 from "../src/species_doy_statistics.json";
-const species_doy_statistics = species_doy_statistics0.filter((sp) => sp.species !== "Merlin");
+const species_doy_statistics = species_doy_statistics0
+  .filter((sp) => sp.species !== "Merlin")
+  .sort((a, b) => taxonomicRank(a.species) - taxonomicRank(b.species));
 
 // Stats functions
 import { predictQuantile } from "./utils/stats";
@@ -386,8 +388,9 @@ import { fetchTrektellenData } from "./services/trektellen";
 import PlotToday from "./components/PlotToday.vue";
 import PlotNextDays from "./components/PlotNextDays.vue";
 import PlotSeason from "./components/PlotSeason.vue";
-import TodayTable from "./components/TodayTable.vue";
+import TodayOverview from "./components/TodayOverview.vue";
 import PlotWeather from "./components/PlotWeather.vue";
+import { taxonomicRank } from "./utils/taxonomy.js";
 import IntroSection from "./components/IntroSection.vue";
 import Footer from "./components/Footer.vue";
 import ExplorePage from "./components/explore/ExplorePage.vue";

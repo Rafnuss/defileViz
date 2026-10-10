@@ -1,6 +1,5 @@
 <template>
   <div>
-    <h1>{{ $t("intro.title") }}</h1>
     <div v-if="showIntro" class="alert alert-info alert-dismissible" role="alert">
       <button
         type="button"
