@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h6 class="text-muted mb-2">{{ $t("plots.season") }}</h6>
+    <h4 class="plot-label">{{ $t("plots.season") }}</h4>
     <div v-if="season?.doy">
       <div ref="plotDiv" class="plot-container"></div>
     </div>
@@ -13,8 +13,8 @@
 <script setup>
 import { ref, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../utils/usePlot";
+import { usePlot, plotReact } from "../utils/usePlot";
+import { COLORS, alpha } from "../theme.js";
 import { dayWindow, dayOfYear } from "../utils/daylight";
 
 const { t } = useI18n();
@@ -77,7 +77,7 @@ async function createPlot() {
     x: [...doy, ...doy.slice().reverse()],
     y: [...upper, ...lower.slice().reverse()],
     fill: "toself",
-    fillcolor: "rgba(128, 128, 128, 0.3)",
+    fillcolor: alpha(COLORS.historyInner, 0.45),
     line: { color: "transparent" },
     name: t("plots.quantileRange"),
     hoverinfo: "skip",
@@ -90,7 +90,7 @@ async function createPlot() {
     y: median,
     type: "scatter",
     mode: "lines",
-    line: { color: "black", width: 2 },
+    line: { color: COLORS.median, width: 1.5 },
     name: t("plots.median"),
     hovertemplate: `${t("plots.date")}: %{x}<br>${t("plots.median")}: %{y:.2f}<extra></extra>`,
   });
@@ -114,12 +114,12 @@ async function createPlot() {
     y: [minY, maxY],
     type: "scatter",
     mode: "lines",
-    line: { color: "red", width: 2, dash: "dot" },
+    line: { color: COLORS.faint, width: 1.5, dash: "dot" },
     name: t("plots.today"),
     hovertemplate: t("plots.today") + "<extra></extra>",
   });
 
-  // Add predicted total as blue dot
+  // Add predicted total as slate-blue dot
   if (props.totalPredicted != null && props.totalPredicted > 0) {
     traces.push({
       x: [todayDoy],
@@ -127,10 +127,10 @@ async function createPlot() {
       type: "scatter",
       mode: "markers",
       marker: {
-        color: "rgba(31, 119, 180, 0.8)", // Blue color matching forecast bars
-        size: 12,
+        color: COLORS.predicted,
+        size: 11,
         symbol: "circle",
-        line: { color: "rgba(31, 119, 180, 1)", width: 2 },
+        line: { color: COLORS.surface, width: 1.5 },
       },
       name: t("plots.predictedTotal"),
       hovertemplate: `${t("plots.predictedTotal")}: %{y:.1f}<extra></extra>`,
@@ -138,7 +138,7 @@ async function createPlot() {
     });
   }
 
-  // Add observed total as red dot
+  // Add observed total as rust dot
   if (props.totalObserved != null && props.totalObserved > 0) {
     traces.push({
       x: [todayDoy],
@@ -146,10 +146,10 @@ async function createPlot() {
       type: "scatter",
       mode: "markers",
       marker: {
-        color: "rgba(220, 53, 69, 0.8)", // Red color matching trektellen observations
-        size: 12,
+        color: COLORS.counted,
+        size: 11,
         symbol: "circle",
-        line: { color: "rgba(220, 53, 69, 1)", width: 2 },
+        line: { color: COLORS.surface, width: 1.5 },
       },
       name: t("plots.observedTotal"),
       hovertemplate: `${t("plots.observedTotal")}: %{y:.1f}<extra></extra>`,
@@ -179,9 +179,7 @@ async function createPlot() {
       y: 1,
       xanchor: "center",
       yanchor: "top",
-      bgcolor: "rgba(255, 255, 255, 0.8)",
-      bordercolor: "rgba(0, 0, 0, 0.2)",
-      borderwidth: 1,
+      bgcolor: alpha(COLORS.surface, 0.85),
       orientation: "h",
     },
     dragmode: false,
@@ -189,7 +187,7 @@ async function createPlot() {
   };
 
   try {
-    await Plotly.react(plotDiv.value, traces, layout, {
+    await plotReact(plotDiv.value, traces, layout, {
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false,

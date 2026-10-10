@@ -77,28 +77,28 @@ const STEPS = [
   width: 0.8rem;
 }
 .step-counts {
-  --c: #adb5bd;
-  --bg: #f8f9fa;
+  --c: var(--dv-faint);
+  --bg: var(--dv-surface-2);
 }
 .step-coverage {
-  --c: #6c757d;
-  --bg: #f1f3f5;
+  --c: var(--dv-muted);
+  --bg: var(--dv-surface-2);
 }
 .step-shown {
-  --c: #1f77b4;
-  --bg: #eef5fb;
+  --c: var(--dv-predicted);
+  --bg: var(--dv-predicted-soft);
 }
 .step-model {
-  --c: #2ca02c;
-  --bg: #eef7ee;
+  --c: var(--dv-sage);
+  --bg: color-mix(in srgb, var(--dv-sage) 10%, white);
 }
 .step-reliability {
-  --c: #e66c00;
-  --bg: #fff5eb;
+  --c: var(--dv-ochre);
+  --bg: var(--dv-gold-soft);
 }
 .step-demography {
-  --c: #9467bd;
-  --bg: #f5f0fa;
+  --c: var(--dv-plum);
+  --bg: color-mix(in srgb, var(--dv-plum) 10%, white);
 }
 @media (max-width: 576px) {
   .flow-arrow,

@@ -5,8 +5,8 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS, alpha } from "../../theme.js";
 import { clock } from "../../services/explore";
 
 const { t } = useI18n();
@@ -39,7 +39,7 @@ function createPlot() {
       y: props.hours,
       type: "bar",
       width: 0.9,
-      marker: { color: "rgba(31, 119, 180, 0.55)" },
+      marker: { color: alpha(COLORS.counted, 0.55) },
       name: t("explore.when.counted"),
       text: solar.map((h) => `${clock(h + s, 10)}–${clock(h + 1 + s, 10)}`),
       textposition: "none",
@@ -52,14 +52,14 @@ function createPlot() {
       x: solar.map((h) => h + 0.5 + s),
       y: e,
       mode: "lines+markers",
-      line: { color: "#212529", width: 2, shape: "spline" },
+      line: { color: COLORS.predicted, width: 2, shape: "spline" },
       marker: { size: 4 },
       name: t("explore.when.predicted"),
       text: solar.map((h) => `${clock(h + s, 10)}–${clock(h + 1 + s, 10)}`),
       hovertemplate: "%{text}: %{y:.0%}<extra></extra>",
     });
   }
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     traces,
     {

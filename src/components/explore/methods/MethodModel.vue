@@ -238,6 +238,8 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import Plotly from "plotly.js-basic-dist-min";
+import { plotReact } from "../../../utils/usePlot";
+import { COLORS, alpha } from "../../../theme.js";
 import { doyLabel } from "../../../services/explore";
 import Tex from "../Tex.vue";
 import NegBinWidget from "../NegBinWidget.vue";
@@ -294,13 +296,12 @@ const TERMS = [
 ];
 // Term colours, as in the CSS below (.t-*)
 const C = {
-  trend: "#1f77b4",
-  year: "#d62728",
-  season: "#2ca02c",
-  shift: "#9467bd",
-  episode: "#ff7f0e",
-  counted: "rgba(150, 150, 150, 0.6)",
-  grid: "rgba(0, 0, 0, 0.08)",
+  trend: COLORS.predicted,
+  year: COLORS.counted,
+  season: COLORS.sage,
+  shift: COLORS.plum,
+  episode: COLORS.ochre,
+  counted: alpha(COLORS.faint, 0.6),
 };
 const FILL_YEARS = 12;
 const LOG_TICKS = [0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50];
@@ -345,7 +346,7 @@ function plotPieces() {
   const year = a.map((r) => r.year);
   const s0 = a[0].smooth;
   if (trendDiv.value) {
-    Plotly.react(
+    plotReact(
       trendDiv.value,
       [
         {
@@ -355,7 +356,7 @@ function plotPieces() {
             ...a.map((r) => r["smooth_q2.5"] / s0).reverse(),
           ],
           fill: "toself",
-          fillcolor: "rgba(31, 119, 180, 0.15)",
+          fillcolor: alpha(C.trend, 0.15),
           line: { color: "transparent" },
           hoverinfo: "skip",
         },
@@ -372,7 +373,6 @@ function plotPieces() {
         yaxis: {
           type: "log",
           fixedrange: true,
-          gridcolor: C.grid,
           title: { text: `× ${a[0].year}` },
           tickvals: LOG_TICKS,
           ticktext: LOG_TICKS.map((v) => `×${v}`),
@@ -384,7 +384,7 @@ function plotPieces() {
   }
   if (yearDiv.value) {
     const ratio = a.map((r) => r.total / r.smooth);
-    Plotly.react(
+    plotReact(
       yearDiv.value,
       [
         {
@@ -392,7 +392,7 @@ function plotPieces() {
           y: ratio.map((v) => v - 1),
           base: 1,
           type: "bar",
-          marker: { color: ratio.map((v) => (v >= 1 ? C.year : "rgba(214, 39, 40, 0.45)")) },
+          marker: { color: ratio.map((v) => (v >= 1 ? C.year : alpha(C.year, 0.45))) },
           customdata: ratio,
           hovertemplate: "%{x}: ×%{customdata:.2f} the trend<extra></extra>",
         },
@@ -400,7 +400,7 @@ function plotPieces() {
       baseLayout({
         bargap: 0.15,
         xaxis: { fixedrange: true },
-        yaxis: { fixedrange: true, gridcolor: C.grid, title: { text: "total / trend" } },
+        yaxis: { fixedrange: true, title: { text: "total / trend" } },
         shapes: [hline(1)],
       }),
       CONFIG,
@@ -414,14 +414,14 @@ function plotPieces() {
       return v.map((x) => x / s);
     };
     const ticks = [213, 244, 274, 305];
-    Plotly.react(
+    plotReact(
       seasonDiv.value,
       [y0, y1].map((y, i) => ({
         x: doy,
         y: norm(trend.value.season[y]),
         mode: "lines",
         line: {
-          color: i ? C.season : "rgba(44, 160, 44, 0.55)",
+          color: i ? C.season : alpha(C.season, 0.55),
           width: 2,
           dash: i ? "solid" : "dot",
         },
@@ -436,7 +436,7 @@ function plotPieces() {
           tickvals: ticks,
           ticktext: ticks.map((d) => doyLabel(d, locale.value)),
         },
-        yaxis: { fixedrange: true, gridcolor: C.grid, tickformat: ".1%", rangemode: "tozero" },
+        yaxis: { fixedrange: true, tickformat: ".1%", rangemode: "tozero" },
       }),
       CONFIG,
     );
@@ -447,7 +447,7 @@ function plotFill() {
   if (!fillDiv.value) return;
   const a = annual.value.slice(-fillYears.value);
   const year = a.map((r) => r.year);
-  Plotly.react(
+  plotReact(
     fillDiv.value,
     [
       {
@@ -462,14 +462,14 @@ function plotFill() {
         x: year,
         y: a.map((r) => r.total - r.observed),
         type: "bar",
-        marker: { color: "rgba(31, 119, 180, 0.55)" },
+        marker: { color: alpha(COLORS.predicted, 0.55) },
         name: "Estimated, not counted",
         error_y: {
           type: "data",
           symmetric: false,
           array: a.map((r) => r.q90 - r.total),
           arrayminus: a.map((r) => r.total - r.q10),
-          color: "#212529",
+          color: COLORS.ink,
           thickness: 1.5,
           width: 4,
         },
@@ -485,7 +485,7 @@ function plotFill() {
       legend: { orientation: "h", x: 0, y: 1.12, traceorder: "normal" },
       margin: { t: 24, l: 60, r: 8, b: 36 },
       xaxis: { fixedrange: true, dtick: 1 },
-      yaxis: { fixedrange: true, gridcolor: C.grid, title: { text: "birds" }, rangemode: "tozero" },
+      yaxis: { fixedrange: true, title: { text: "birds" }, rangemode: "tozero" },
     }),
     CONFIG,
   );
@@ -498,7 +498,7 @@ const hline = (y) => ({
   x1: 1,
   y0: y,
   y1: y,
-  line: { color: "rgba(0,0,0,0.35)", width: 1, dash: "dot" },
+  line: { color: alpha(COLORS.ink, 0.35), width: 1, dash: "dot" },
 });
 
 function drawAll() {

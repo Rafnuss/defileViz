@@ -1,16 +1,15 @@
 <template>
-  <div class="d-flex align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0 me-1">{{ $t("table.title") }}</h2>
+  <div class="section-head mt-0">
+    <h2>{{ $t("table.title") }}</h2>
     <button
-      ref="infoBtn"
       type="button"
-      class="btn btn-link p-0 text-info fs-4 lh-1"
-      tabindex="0"
-      data-bs-toggle="popover"
-      data-bs-trigger="focus"
-      data-bs-html="true"
-      :data-bs-content="popoverContent"
+      class="btn btn-link p-0 info-btn lh-1"
+      :class="{ open: showHelp }"
+      :aria-expanded="showHelp"
+      aria-controls="overview-help"
       :title="$t('table.explanation.title')"
+      :aria-label="$t('table.explanation.title')"
+      @click="showHelp = !showHelp"
     >
       <i class="bi bi-info-circle"></i>
     </button>
@@ -28,15 +27,16 @@
     </div>
   </div>
   <div class="overview mb-4">
-    <div class="overview-legend text-muted small mb-1">
-      <span class="legend-dot counted"></span>
-      <img src="/trektellen_logo.png" alt="" class="legend-icon" />{{ $t("table.counted") }}
-      <span class="legend-dot predicted ms-3"></span>
-      <img src="/predicted_logo.svg" alt="" class="legend-icon" />{{ $t("table.predicted") }}
-      <span class="ms-3">{{ $t("table.distribution") }}</span>
+    <div class="overview-legend">
+      <span class="swatch predicted"></span>{{ $t("table.predicted") }}
+      <span class="swatch counted ms-3"></span>{{ $t("table.counted") }}
+      <span class="swatch band ms-3"></span>{{ $t("table.distribution") }}
     </div>
+    <ul v-if="showHelp" id="overview-help" class="overview-help">
+      <li v-for="k in HELP" :key="k">{{ $t(`table.explanation.${k}`) }}</li>
+    </ul>
     <div v-for="row in enrichedspecies" :key="row.species" class="overview-row">
-      <a :href="`#${row.species}`" class="species-link text-decoration-none text-dark">
+      <a :href="`#${row.species}`" class="species-link">
         <img
           :src="`/defileViz/species_icon/${row.species.toLowerCase().replace(/\s+/g, '_')}.svg`"
           :alt="row.species + ' icon'"
@@ -50,19 +50,22 @@
         <div
           class="median"
           :style="{ left: row.bar.median + '%' }"
-          :title="`${t('table.historical')}: ${fmt(row.totalMedian)}`"
+          tabindex="0"
+          :data-tip="`${t('table.historical')}: ${fmt(row.totalMedian)}`"
         ></div>
         <div
           v-if="row.bar.counted != null"
           class="marker counted"
           :style="{ left: row.bar.counted + '%' }"
-          :title="`${t('table.counted')}: ${describe(row.trektellenCount, row.trektellenQuantile)}`"
+          tabindex="0"
+          :data-tip="`${t('table.counted')}: ${describe(row.trektellenCount, row.trektellenQuantile)}`"
         ></div>
         <div
           v-if="row.bar.predicted != null"
           class="marker predicted"
           :style="{ left: row.bar.predicted + '%' }"
-          :title="`${t('table.predicted')}: ${describe(row.totalPredicted, row.totalQuantile)}`"
+          tabindex="0"
+          :data-tip="`${t('table.predicted')}: ${describe(row.totalPredicted, row.totalQuantile)}`"
         ></div>
       </div>
       <span v-else class="text-muted">-</span>
@@ -71,9 +74,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { Popover } from "bootstrap";
 import { rangeBar } from "../utils/rangeBar.js";
 
 const { t } = useI18n();
@@ -81,22 +83,11 @@ const { t } = useI18n();
 const props = defineProps({
   species: { type: Array, required: true },
 });
-const infoBtn = ref(null);
+const showHelp = ref(false);
 const mode = ref("number"); // "number" (log axis) or "quantile"
 
-const popoverContent = computed(
-  () =>
-    `<b>${t("table.species")}</b>: ${t("table.explanation.species")}<br>
-   <b>${t("table.observed")}</b>: ${t("table.explanation.observed")}<br>
-   <b>${t("table.predicted")}</b>: ${t("table.explanation.predicted")}<br>
-   <b>${t("table.distribution")}</b>: ${t("table.explanation.distribution")}`,
-);
+const HELP = ["predicted", "counted", "distribution", "mode", "values"];
 
-onMounted(() => {
-  if (infoBtn.value) {
-    new Popover(infoBtn.value);
-  }
-});
 const enrichedspecies = computed(() =>
   props.species.map((r) => {
     const forecast = r.forecast;
@@ -156,7 +147,8 @@ function ordinal(n) {
   return `${k}${{ 1: "st", 2: "nd", 3: "rd" }[k % 10] ?? "th"}`;
 }
 
-const fmt = (total) => (total != null ? Math.round(total) : "-");
+// Whole birds, but one decimal below one so a small forecast does not read as 0
+const fmt = (total) => (total == null ? "-" : total >= 1 ? Math.round(total) : total.toFixed(1));
 
 /** Tooltip text: the daily total and where it falls among past years. */
 function describe(total, quantile) {
@@ -169,9 +161,36 @@ const span = ([from, to]) => ({ left: `${from}%`, width: `${to - from}%` });
 </script>
 
 <style>
-.popover {
-  min-width: 320px;
-  max-width: 400px;
+.overview {
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-line);
+  border-radius: var(--dv-radius);
+  padding: 0.5rem 1rem 0.75rem;
+}
+
+.overview-legend {
+  font-size: 0.8rem;
+  color: var(--dv-muted);
+  padding: 0.25rem 0 0.5rem;
+  border-bottom: 1px solid var(--dv-line);
+}
+
+.info-btn {
+  color: var(--dv-faint);
+  font-size: 1rem;
+}
+
+.info-btn:hover,
+.info-btn.open {
+  color: var(--dv-accent);
+}
+
+.overview-help {
+  margin: 0;
+  padding: 0.5rem 0 0.5rem 1.1rem;
+  font-size: 0.8rem;
+  color: var(--dv-muted);
+  border-bottom: 1px solid var(--dv-line);
 }
 
 .overview-row {
@@ -179,13 +198,16 @@ const span = ([from, to]) => ({ left: `${from}%`, width: `${to - from}%` });
   align-items: center;
   gap: 12px;
   padding: 2px 0;
-  border-bottom: 1px solid var(--bs-gray-200);
+  border-bottom: 1px solid var(--dv-grid);
 }
 
 .species-link {
   flex: 0 0 190px;
   display: flex;
   align-items: center;
+  color: var(--dv-ink);
+  text-decoration: none;
+  font-size: 0.9rem;
   transition: color 0.2s ease;
 }
 
@@ -197,8 +219,7 @@ const span = ([from, to]) => ({ left: `${from}%`, width: `${to - from}%` });
 }
 
 .species-link:hover {
-  color: var(--bs-primary) !important;
-  text-decoration: underline !important;
+  color: var(--dv-accent);
 }
 
 .range-bar {
@@ -215,11 +236,11 @@ const span = ([from, to]) => ({ left: `${from}%`, width: `${to - from}%` });
 }
 
 .range-bar .band.outer {
-  background: var(--bs-gray-300);
+  background: var(--dv-history-outer);
 }
 
 .range-bar .band.inner {
-  background: var(--bs-gray-500);
+  background: var(--dv-history-inner);
 }
 
 .range-bar .median {
@@ -227,7 +248,7 @@ const span = ([from, to]) => ({ left: `${from}%`, width: `${to - from}%` });
   top: 5px;
   width: 6px; /* wide hover target around the 2px tick */
   height: 16px;
-  background: linear-gradient(var(--bs-gray-800), var(--bs-gray-800)) center / 2px 100% no-repeat;
+  background: linear-gradient(var(--dv-median), var(--dv-median)) center / 2px 100% no-repeat;
   transform: translateX(-3px);
 }
 
@@ -237,33 +258,47 @@ const span = ([from, to]) => ({ left: `${from}%`, width: `${to - from}%` });
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2px solid var(--dv-surface);
+  box-shadow: 0 0 0 1px rgba(36, 33, 29, 0.15);
   box-sizing: border-box;
   transform: translateX(-50%);
-  cursor: help;
 }
 
-.marker.counted,
-.legend-dot.counted {
-  background: #d9480f;
+.range-bar [data-tip]:hover,
+.range-bar [data-tip]:focus {
+  z-index: 2;
+  outline: none;
 }
 
-.marker.predicted,
-.legend-dot.predicted {
-  background: var(--bs-primary);
+/* The value and its percentile, shown on hover, keyboard focus or tap */
+.range-bar [data-tip]::after {
+  content: attr(data-tip);
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.3rem;
+  background: var(--dv-ink);
+  color: var(--dv-surface);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.legend-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 4px;
+.range-bar [data-tip]:hover::after,
+.range-bar [data-tip]:focus::after {
+  display: block;
 }
 
-.legend-icon {
-  height: 18px;
-  margin-right: 4px;
+.marker.counted {
+  background: var(--dv-counted);
+}
+
+.marker.predicted {
+  background: var(--dv-predicted);
 }
 
 @media (max-width: 575.98px) {

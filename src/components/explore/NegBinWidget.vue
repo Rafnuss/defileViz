@@ -87,8 +87,8 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS, alpha } from "../../theme.js";
 import Tex from "./Tex.vue";
 
 const props = defineProps({
@@ -102,9 +102,9 @@ const SCALES = [
   { key: "linear", label: "equal" },
   { key: "log", label: "widening" },
 ];
-const C_NB = "rgba(31, 119, 180, 0.6)";
-const C_OUT = "rgba(31, 119, 180, 0.25)"; // bars outside the 80% range
-const C_POIS = "#d62728";
+const C_NB = alpha(COLORS.predicted, 0.6);
+const C_OUT = alpha(COLORS.predicted, 0.25); // bars outside the 80% range
+const C_POIS = COLORS.counted;
 
 const logMu = ref(2);
 const scale = ref("linear");
@@ -208,7 +208,7 @@ function draw() {
   const poB = bin(po);
   const { lo, hi } = q.value;
   const inRange = e.slice(0, -1).map((a, i) => e[i + 1] - 1 >= lo && a <= hi);
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     [
       {

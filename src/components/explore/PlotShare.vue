@@ -5,15 +5,15 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS, alpha } from "../../theme.js";
 
 const { t, locale } = useI18n();
 
 const props = defineProps({
   // the age or sex block: {years, share, lo, hi, n, counted, overall: {share, lo, hi, n}}
   block: { type: Object, required: true },
-  color: { type: String, default: "#1f77b4" },
+  color: { type: String, default: COLORS.predicted },
 });
 
 const plotDiv = ref(null);
@@ -26,7 +26,7 @@ function createPlot() {
   const nMax = Math.max(...b.n);
   const x0 = Math.min(...b.years) - 0.5;
   const x1 = Math.max(...b.years) + 0.5;
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     [
       {
@@ -34,7 +34,7 @@ function createPlot() {
         y: [o.lo, o.lo, o.hi, o.hi],
         mode: "lines",
         fill: "toself",
-        fillcolor: "rgba(108, 117, 125, 0.15)",
+        fillcolor: alpha(COLORS.faint, 0.15),
         line: { width: 0 },
         hoverinfo: "skip",
         showlegend: false,
@@ -43,7 +43,7 @@ function createPlot() {
         x: [x0, x1],
         y: [o.share, o.share],
         mode: "lines",
-        line: { color: "rgba(108, 117, 125, 0.9)", width: 1.5, dash: "dash" },
+        line: { color: alpha(COLORS.muted, 0.9), width: 1.5, dash: "dash" },
         hoverinfo: "skip",
         showlegend: false,
       },

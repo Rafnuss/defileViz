@@ -88,6 +88,7 @@
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { doyLabel } from "../../services/explore";
+import { COLORS } from "../../theme.js";
 
 const { t, locale } = useI18n();
 
@@ -107,10 +108,12 @@ const TOP = 4;
 const BOTTOM = 24;
 const x0 = 46;
 const x1 = W - 8;
-// Sequential scale (light yellow to dark red), on the share relative to a high quantile
-const STOPS = ["#fff3c4", "#fdd17f", "#fd9a44", "#e8512c", "#b1101f", "#6b0016"];
-const C_ZERO = "#fdfdfb"; // counted, no bird
-const C_GAP = "#e3e6e9"; // not counted
+// Sequential scale (pale gold to deep rust, from the palette), on the share relative to a high
+// quantile; hex only (color() interpolates them). First and last stops: a light gold and a rust
+// darker than COLORS.red, the ends the palette lacks.
+const STOPS = ["#f5e6b8", COLORS.gold, COLORS.ochre, COLORS.counted, COLORS.red, "#6e2a12"];
+const C_ZERO = COLORS.paper; // counted, no bird
+const C_GAP = COLORS.line; // not counted
 const MONTHS = [182, 213, 244, 274, 305, 335];
 const PALE = 0.45; // opacity of a day not counted, its share estimated
 
@@ -217,15 +220,15 @@ function onMove(ev) {
 }
 .tick {
   font-size: 11px;
-  fill: #6c757d;
+  fill: var(--dv-muted);
 }
 .grid {
-  stroke: rgba(255, 255, 255, 0.7);
+  stroke: color-mix(in srgb, var(--dv-surface) 70%, transparent);
   stroke-width: 1;
 }
 .smooth {
   fill: none;
-  stroke: #212529;
+  stroke: var(--dv-ink);
   stroke-width: 2;
 }
 .smooth.outer {
@@ -233,18 +236,18 @@ function onMove(ev) {
   stroke-dasharray: 2 3;
 }
 .band {
-  stroke: #212529;
+  stroke: var(--dv-ink);
   stroke-width: 1.2;
 }
 .dot {
-  fill: #fff;
-  stroke: #212529;
+  fill: var(--dv-surface);
+  stroke: var(--dv-ink);
   stroke-width: 1.2;
 }
 .tip {
   position: absolute;
   transform: translate(-50%, -130%);
-  background: rgba(33, 37, 41, 0.9);
+  background: color-mix(in srgb, var(--dv-ink) 90%, transparent);
   color: #fff;
   padding: 2px 6px;
   border-radius: 4px;
@@ -263,22 +266,22 @@ function onMove(ev) {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  border: 1.2px solid #212529;
-  background: #fff;
+  border: 1.2px solid var(--dv-ink);
+  background: var(--dv-surface);
 }
 .sw-line {
   width: 18px;
-  border-top: 2px solid #212529;
+  border-top: 2px solid var(--dv-ink);
 }
 .sw-pale {
   width: 12px;
   height: 9px;
-  background: #fd9a44;
+  background: var(--dv-ochre);
   opacity: 0.45;
 }
 .sw-gap {
   width: 12px;
   height: 9px;
-  background: #e3e6e9;
+  background: var(--dv-line);
 }
 </style>

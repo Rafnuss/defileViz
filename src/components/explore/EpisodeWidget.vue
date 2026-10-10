@@ -25,8 +25,8 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS, alpha } from "../../theme.js";
 import { doyLabel } from "../../services/explore";
 import Tex from "./Tex.vue";
 
@@ -41,9 +41,9 @@ const props = defineProps({
 
 // As defile-explore src/defile_explore/trend.py MIN_COVERAGE: days counted less are not fitted
 const MIN_COVERAGE = 0.1;
-const C_EPISODE = "#e66c00";
-const C_BASE = "rgba(33, 37, 41, 0.6)";
-const C_POINT = "rgba(33, 37, 41, 0.45)";
+const C_EPISODE = COLORS.ochre;
+const C_BASE = alpha(COLORS.ink, 0.6);
+const C_POINT = alpha(COLORS.ink, 0.45);
 const DATE_TICKS = [213, 244, 274, 305];
 const FACTOR_TICKS = [0.25, 0.5, 1, 2, 4];
 
@@ -128,7 +128,7 @@ function draw() {
     tickvals: DATE_TICKS,
     ticktext: DATE_TICKS.map((d) => doyLabel(d, "en")),
   };
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     [
       {
@@ -199,7 +199,7 @@ function draw() {
           yref: "y2",
           y0: 1,
           y1: 1,
-          line: { color: "rgba(0,0,0,0.35)", width: 1, dash: "dot" },
+          line: { color: alpha(COLORS.ink, 0.35), width: 1, dash: "dot" },
         },
       ],
     },

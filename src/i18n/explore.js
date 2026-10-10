@@ -56,16 +56,15 @@ export default {
         record: "Record day",
       },
       when: {
-        title: "When to see it",
+        title: "When to see it?",
         season: "Through the season",
-        seasonHelpFilled:
-          "Chance that a full day ({from}–{to}) holds at least so many birds, with the days and hours nobody counted estimated by the trend model.",
-        seasonHelp: "Share of well-counted days ({from}–{to}) with at least so many birds.",
+        seasonHelpFilled: "Chance to see at least this many birds in a full day ({from}–{to}).",
+        seasonHelp: "Chance to see at least this many birds on a well-counted day ({from}–{to}).",
         atLeast: "≥ {n}",
         mainPassage: "main passage",
         day: "Through the day",
         dayHelp:
-          "Birds per counted hour from {from} to {to} (the main passage), as shares, beside what the time-of-day model predicts for the same days and hours. Clock time around {date} ({zone}).",
+          "Average share of the day's birds passing in each hour, over the main passage ({from} to {to}). Hours follow the sun, scaled to the length of the day, and are shown as clock time around {date} ({zone}).",
         summer: "summer time",
         winter: "winter time",
         counted: "counted",
@@ -77,7 +76,8 @@ export default {
       },
       many: {
         title: "How many each year?",
-        help: "Birds per season ({window}): counted (bars), and estimated with the hours and days nobody counted (dots). Click a year to read about its season.",
+        help: "Birds counted per season ({window}), and the total estimated after accounting for the hours and days nobody counted.",
+        clickYear: "Click another year to see its season",
         figure: "Birds per season",
         result: "{change} since {year}",
         typical: "{n} in a typical season",
@@ -96,17 +96,17 @@ export default {
         dayTotal: "Estimated full day",
         dayCovered: "of the day counted",
         daysHelp:
-          "Each day of this season: birds counted (bars) and the estimate for the full day (dots), adding the hours nobody counted from the time-of-day profile, the neighbouring days and the season. The less of a day was counted, the wider its interval. Days nobody counted are estimated from the model alone (pale dots).",
+          "Birds counted each day and the estimate for the full day, accounting for the hours nobody counted. The less of a day was counted, the wider its interval; days nobody counted are shown pale.",
         noAccount: "No written account for this season.",
       },
       timing: {
         title: "Has the timing changed?",
         figure: "Half the birds passed",
-        help: "One row per season: the darker a day, the more of that season's birds it held. Dots: the day by which half had passed. Line: its smooth trend.",
+        help: "One row per season. The colour shows the birds per day as a share of the season's total, so that changes in timing stand out.",
         medianCounted: "half passed (counted)",
         medianSmooth: "smooth trend",
         helpFilled:
-          "One row per season: the darker a day, the more of that season's birds it held, the days and hours nobody counted estimated by the trend model (paler: not counted). Dots: the day by which half had passed, with its 80% interval. Line: its smooth trend.",
+          "One row per season. The colour shows the estimated birds per day as a share of the season's total, so that changes in timing stand out; the hours and days nobody counted are estimated by the trend model.",
         medianFilled: "half passed (80% interval)",
         estimated: "not counted, estimated",
         notCounted: "not counted",
@@ -229,16 +229,17 @@ export default {
         record: "Journée record",
       },
       when: {
-        title: "Quand l'observer",
+        title: "Quand l'observer ?",
         season: "Au fil de la saison",
         seasonHelpFilled:
-          "Probabilité qu'une journée entière ({from}–{to}) compte au moins autant d'oiseaux, les jours et heures non comptés étant estimés par le modèle de tendance.",
-        seasonHelp: "Part des jours bien comptés ({from}–{to}) avec au moins autant d'oiseaux.",
+          "Probabilité de voir au moins autant d'oiseaux en une journée entière ({from}–{to}).",
+        seasonHelp:
+          "Probabilité de voir au moins autant d'oiseaux lors d'une journée bien comptée ({from}–{to}).",
         atLeast: "≥ {n}",
         mainPassage: "passage principal",
         day: "Au fil de la journée",
         dayHelp:
-          "Oiseaux par heure comptée du {from} au {to} (passage principal), en parts, à côté de ce que prévoit le modèle horaire pour les mêmes jours et heures. Heure légale autour du {date} ({zone}).",
+          "Part moyenne des oiseaux de la journée passant à chaque heure, sur le passage principal (du {from} au {to}). Les heures suivent le soleil, ramenées à la durée du jour, et sont affichées en heure légale autour du {date} ({zone}).",
         summer: "heure d'été",
         winter: "heure d'hiver",
         counted: "compté",
@@ -250,7 +251,8 @@ export default {
       },
       many: {
         title: "Combien chaque année ?",
-        help: "Oiseaux par saison ({window}) : comptés (barres), et estimés avec les heures et jours non comptés (points). Cliquez sur une année pour lire sa saison.",
+        help: "Oiseaux comptés par saison ({window}), et total estimé en tenant compte des heures et des jours non comptés.",
+        clickYear: "Cliquez sur une autre année pour voir sa saison",
         figure: "Oiseaux par saison",
         result: "{change} depuis {year}",
         typical: "{n} lors d'une saison typique",
@@ -269,17 +271,17 @@ export default {
         dayTotal: "Journée entière estimée",
         dayCovered: "de la journée comptée",
         daysHelp:
-          "Chaque jour de la saison : oiseaux comptés (barres) et estimation pour la journée entière (points), en ajoutant les heures non comptées d'après le profil horaire, les jours voisins et la saison. Moins un jour a été compté, plus son intervalle est large. Les jours sans comptage sont estimés par le modèle seul (points pâles).",
+          "Oiseaux comptés chaque jour et estimation pour la journée entière, en tenant compte des heures non comptées. Moins un jour a été compté, plus son intervalle est large ; les jours sans comptage sont en pâle.",
         noAccount: "Pas de texte pour cette saison.",
       },
       timing: {
         title: "Le calendrier a-t-il changé ?",
         figure: "Moitié des oiseaux passée",
-        help: "Une ligne par saison : plus un jour est foncé, plus il a compté d'oiseaux de la saison. Points : le jour où la moitié était passée. Ligne : sa tendance lissée.",
+        help: "Une ligne par saison. La couleur indique les oiseaux par jour en part du total de la saison, pour faire ressortir les changements de calendrier.",
         medianCounted: "moitié passée (comptée)",
         medianSmooth: "tendance lissée",
         helpFilled:
-          "Une ligne par saison : plus un jour est foncé, plus il a compté d'oiseaux de la saison, les jours et heures non comptés étant estimés par le modèle de tendance (plus pâle : non compté). Points : le jour où la moitié était passée, avec son intervalle à 80 %. Ligne : sa tendance lissée.",
+          "Une ligne par saison. La couleur indique les oiseaux estimés par jour en part du total de la saison, pour faire ressortir les changements de calendrier ; les heures et jours non comptés sont estimés par le modèle de tendance.",
         medianFilled: "moitié passée (intervalle 80 %)",
         estimated: "non compté, estimé",
         notCounted: "non compté",
@@ -402,16 +404,17 @@ export default {
         record: "Rekordtag",
       },
       when: {
-        title: "Wann beobachten",
+        title: "Wann beobachten?",
         season: "Im Lauf der Saison",
         seasonHelpFilled:
-          "Wahrscheinlichkeit, dass ein ganzer Tag ({from}–{to}) mindestens so viele Vögel bringt, nicht gezählte Tage und Stunden vom Trendmodell geschätzt.",
-        seasonHelp: "Anteil der gut gezählten Tage ({from}–{to}) mit mindestens so vielen Vögeln.",
+          "Wahrscheinlichkeit, an einem ganzen Tag mindestens so viele Vögel zu sehen ({from}–{to}).",
+        seasonHelp:
+          "Wahrscheinlichkeit, an einem gut gezählten Tag mindestens so viele Vögel zu sehen ({from}–{to}).",
         atLeast: "≥ {n}",
         mainPassage: "Hauptdurchzug",
         day: "Im Lauf des Tages",
         dayHelp:
-          "Vögel pro gezählter Stunde vom {from} bis {to} (Hauptdurchzug), als Anteile, neben der Vorhersage des Tageszeitmodells für dieselben Tage und Stunden. Uhrzeit um den {date} ({zone}).",
+          "Durchschnittlicher Anteil der Vögel eines Tages pro Stunde, über den Hauptdurchzug ({from} bis {to}). Die Stunden folgen der Sonne, auf die Tageslänge skaliert, und sind als Uhrzeit um den {date} ({zone}) angegeben.",
         summer: "Sommerzeit",
         winter: "Winterzeit",
         counted: "gezählt",
@@ -423,7 +426,8 @@ export default {
       },
       many: {
         title: "Wie viele pro Jahr?",
-        help: "Vögel pro Saison ({window}): gezählt (Balken), und geschätzt mit den nicht gezählten Stunden und Tagen (Punkte). Klicken Sie auf ein Jahr, um seine Saison zu lesen.",
+        help: "Gezählte Vögel pro Saison ({window}) und die geschätzte Summe unter Berücksichtigung der nicht gezählten Stunden und Tage.",
+        clickYear: "Klicken Sie auf ein anderes Jahr, um seine Saison zu sehen",
         figure: "Vögel pro Saison",
         result: "{change} seit {year}",
         typical: "{n} in einer typischen Saison",
@@ -442,17 +446,17 @@ export default {
         dayTotal: "Geschätzter ganzer Tag",
         dayCovered: "des Tages gezählt",
         daysHelp:
-          "Jeder Tag der Saison: gezählte Vögel (Balken) und die Schätzung für den ganzen Tag (Punkte), ergänzt um die nicht gezählten Stunden aus dem Tagesprofil, den Nachbartagen und der Saison. Je weniger von einem Tag gezählt wurde, desto breiter sein Intervall. Tage ohne Zählung schätzt allein das Modell (blasse Punkte).",
+          "Täglich gezählte Vögel und die Schätzung für den ganzen Tag unter Berücksichtigung der nicht gezählten Stunden. Je weniger von einem Tag gezählt wurde, desto breiter sein Intervall; Tage ohne Zählung sind blass dargestellt.",
         noAccount: "Kein Text für diese Saison.",
       },
       timing: {
         title: "Hat sich der Zeitpunkt verschoben?",
         figure: "Hälfte der Vögel durch",
-        help: "Eine Zeile pro Saison: je dunkler ein Tag, desto mehr Vögel der Saison zogen an ihm. Punkte: der Tag, bis zu dem die Hälfte durch war. Linie: ihr geglätteter Trend.",
+        help: "Eine Zeile pro Saison. Die Farbe zeigt die Vögel pro Tag als Anteil an der Saisonsumme, damit Verschiebungen im Zeitpunkt sichtbar werden.",
         medianCounted: "Hälfte durch (gezählt)",
         medianSmooth: "geglätteter Trend",
         helpFilled:
-          "Eine Zeile pro Saison: je dunkler ein Tag, desto mehr Vögel der Saison zogen an ihm durch, nicht gezählte Tage und Stunden vom Trendmodell geschätzt (blasser: nicht gezählt). Punkte: der Tag, an dem die Hälfte durchgezogen war, mit 80%-Intervall. Linie: sein geglätteter Trend.",
+          "Eine Zeile pro Saison. Die Farbe zeigt die geschätzten Vögel pro Tag als Anteil an der Saisonsumme, damit Verschiebungen im Zeitpunkt sichtbar werden; nicht gezählte Stunden und Tage schätzt das Trendmodell.",
         medianFilled: "Hälfte durchgezogen (80%-Intervall)",
         estimated: "nicht gezählt, geschätzt",
         notCounted: "nicht gezählt",

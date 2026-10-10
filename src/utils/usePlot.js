@@ -1,5 +1,6 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import Plotly from "plotly.js-basic-dist-min";
+import { PLOT_TEMPLATE } from "../theme.js";
 
 /**
  * Lifecycle shared by the Plotly components: `visible` turns true once the element first comes
@@ -37,4 +38,12 @@ export function usePlot(elRef) {
   });
 
   return visible;
+}
+
+/**
+ * Plotly.react with the site's chart theme (src/theme.js): fonts, axes and hover labels shared by
+ * every chart. A layout can still override any of it.
+ */
+export function plotReact(el, traces, layout = {}, config = {}) {
+  return Plotly.react(el, traces, { template: PLOT_TEMPLATE, ...layout }, config);
 }

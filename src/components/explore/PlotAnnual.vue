@@ -5,8 +5,8 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS, alpha } from "../../theme.js";
 
 const { t } = useI18n();
 
@@ -24,11 +24,11 @@ const props = defineProps({
 });
 const emit = defineEmits(["select"]);
 
-const C_COUNTED = "rgba(150, 150, 150, 0.55)";
-const C_SELECTED = "rgba(13, 110, 253, 0.55)";
-const C_TOTAL = "rgb(33, 37, 41)";
-const C_TREND = "rgb(31, 119, 180)";
-const C_CAVEAT = "#b06d00";
+const C_COUNTED = alpha(COLORS.counted, 0.35);
+const C_SELECTED = alpha(COLORS.counted, 0.8);
+const C_TOTAL = COLORS.predicted;
+const C_TREND = COLORS.predicted;
+const C_CAVEAT = COLORS.ochre;
 
 const plotDiv = ref(null);
 const visible = usePlot(plotDiv);
@@ -57,7 +57,7 @@ function createPlot() {
         x: [...year, ...year.slice().reverse()],
         y: [...col("smooth_q97.5"), ...col("smooth_q2.5").reverse()],
         fill: "toself",
-        fillcolor: "rgba(31, 119, 180, 0.15)",
+        fillcolor: alpha(C_TREND, 0.15),
         line: { color: "transparent" },
         name: t("explore.many.trendBand"),
         hoverinfo: "skip",
@@ -110,12 +110,12 @@ function createPlot() {
         x: est.map((r) => r.year),
         y: est.map((r) => r.total),
         mode: "markers",
-        marker: { size: 14, color: "rgba(0,0,0,0)", line: { color: C_CAVEAT, width: 1.5 } },
+        marker: { size: 14, color: "transparent", line: { color: C_CAVEAT, width: 1.5 } },
         name: t("explore.many.estimated"),
         hoverinfo: "skip",
       });
   }
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     traces,
     {

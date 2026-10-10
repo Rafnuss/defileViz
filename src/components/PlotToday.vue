@@ -1,8 +1,8 @@
 <template>
   <div ref="rootEl">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="text-muted mb-0">{{ $t("plots.today") }}...</h6>
-      <div class="d-flex gap-2">
+      <h4 class="plot-label">{{ $t("plots.today") }}</h4>
+      <div class="d-flex gap-2 small tnum">
         <span v-if="props.forecast">
           <span
             :style="{ color: predSignificance.color }"
@@ -17,7 +17,7 @@
             {{ $t("table.predicted").toLowerCase() }}
           </span>
         </span>
-        /
+        <span v-if="props.forecast && props.trektellen?.count > 0" class="text-muted">/</span>
         <span
           v-if="props.trektellen && props.trektellen.count > 0"
           :style="{ color: observedSignificance.color }"
@@ -36,8 +36,8 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed, inject } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../utils/usePlot";
+import { usePlot, plotReact } from "../utils/usePlot";
+import { COLORS, alpha } from "../theme.js";
 import { Tooltip } from "bootstrap";
 import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
 import { localUtcOffset } from "../utils/daylight";
@@ -121,7 +121,7 @@ async function createPlot() {
         ...upperTrace,
         line: { ...upperTrace.line, width: 0 },
         fill: "tonexty",
-        fillcolor: "rgba(128,128,128,0.25)",
+        fillcolor: alpha(COLORS.historyInner, 0.45),
         hoverinfo: "skip",
         name: "lower–upper",
         showlegend: false,
@@ -135,7 +135,7 @@ async function createPlot() {
     xHours,
     ratio,
     historical.median,
-    "black",
+    COLORS.median,
     "solid",
     t("plots.median"),
     true,
@@ -150,11 +150,12 @@ async function createPlot() {
       type: "bar",
       text: predCount.map((v) => v.toFixed(1)),
       textposition: "auto",
+      textfont: { size: 10 },
       customdata: Array.from({ length: predCount.length }, (_, i) => hourLabel(i)),
       hovertemplate: `%{customdata}<br>${t("plots.forecast")}: %{y:.0f}<extra></extra>`,
       width: 1,
       name: t("plots.forecast"),
-      marker: { color: "rgba(31, 119, 180, 0.7)" }, // Blue color with transparency
+      marker: { color: alpha(COLORS.predicted, 0.8) },
     };
     allTraces.push(forecastTrace);
   }
@@ -192,10 +193,10 @@ async function createPlot() {
         type: "scatter",
         mode: "markers",
         marker: {
-          color: "rgba(220, 53, 69, 0.8)", // Bootstrap danger red that complements blue
-          size: 12,
+          color: COLORS.counted,
+          size: 11,
           symbol: "circle",
-          line: { color: "rgba(220, 53, 69, 1)", width: 2 },
+          line: { color: COLORS.surface, width: 1.5 },
         },
         name: t("plots.trektellenObservations"),
         customdata: trektellenData.map((d) => hourLabel(d.hour)),
@@ -234,7 +235,7 @@ async function createPlot() {
     annotations: [],
   };
   try {
-    await Plotly.react(plotDiv.value, allTraces, layout, {
+    await plotReact(plotDiv.value, allTraces, layout, {
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false,
@@ -254,16 +255,16 @@ function getSignificance(quantile) {
   const percentile = Math.round(quantile);
 
   if (quantile >= 90) {
-    color = "red";
+    color = COLORS.red;
     explanation = t("significance.exceptional", { p: percentile });
   } else if (quantile >= 80) {
-    color = "orange";
+    color = COLORS.ochre;
     explanation = t("significance.notable", { p: percentile });
   } else if (quantile >= 50) {
-    color = "green";
+    color = COLORS.sage;
     explanation = t("significance.above", { p: percentile });
   } else {
-    color = "black";
+    color = COLORS.ink;
     explanation = t("significance.below", { p: percentile });
   }
 

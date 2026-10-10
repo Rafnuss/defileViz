@@ -103,8 +103,8 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../../utils/usePlot";
+import { usePlot, plotReact } from "../../../utils/usePlot";
+import { COLORS, alpha } from "../../../theme.js";
 
 const props = defineProps({
   name: { type: String, required: true },
@@ -158,7 +158,7 @@ function plot() {
     x,
     y,
     mode: "markers",
-    marker: { size: 1, color: "#1f77b4" },
+    marker: { size: 1, color: COLORS.predicted },
     error_y: {
       type: "data",
       symmetric: false,
@@ -166,18 +166,18 @@ function plot() {
       arrayminus: trials.map((r) => r.estimate - r[a]),
       width: 0,
       thickness: w,
-      color: "rgba(31, 119, 180, 0.6)",
+      color: alpha(COLORS.predicted, 0.6),
     },
     hoverinfo: "skip",
   });
-  Plotly.react(
+  plotReact(
     testDiv.value,
     [
       {
         x: [lo, hi],
         y: [lo, hi],
         mode: "lines",
-        line: { color: "#adb5bd", dash: "dot" },
+        line: { color: COLORS.faint, dash: "dot" },
         hoverinfo: "skip",
       },
       bars("q2.5", "q97.5", 1),
@@ -186,7 +186,7 @@ function plot() {
         x,
         y,
         mode: "markers",
-        marker: { color: "#1f77b4", size: 7 },
+        marker: { color: COLORS.predicted, size: 7 },
         customdata: trials.map((r) => [r.target, r.donor]),
         hovertemplate:
           "%{customdata[0]} with the gaps of %{customdata[1]}: counted %{x:,.0f}, estimated %{y:,.0f}<extra></extra>",

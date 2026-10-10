@@ -19,15 +19,18 @@ export function useSettings() {
       show: saved.plots?.[name] ?? true,
     })),
   );
-  const medianThreshold = ref(saved.medianThreshold ?? 0);
+  // Hide species whose usual (median) total for the date is at most medianThreshold birds
+  const medianFilter = ref(saved.medianFilter ?? true);
+  const medianThreshold = ref(Math.max(0, saved.medianThreshold ?? 0));
   const nextDaysLength = ref(saved.nextDaysLength ?? 4);
   const sortOption = ref(saved.sortOption ?? "taxonomy");
 
   watch(
-    [plotOptions, medianThreshold, nextDaysLength, sortOption],
+    [plotOptions, medianFilter, medianThreshold, nextDaysLength, sortOption],
     () => {
       const settings = {
         plots: Object.fromEntries(plotOptions.value.map((p) => [p.name, p.show])),
+        medianFilter: medianFilter.value,
         medianThreshold: medianThreshold.value,
         nextDaysLength: nextDaysLength.value,
         sortOption: sortOption.value,
@@ -41,5 +44,5 @@ export function useSettings() {
     { deep: true },
   );
 
-  return { plotOptions, medianThreshold, nextDaysLength, sortOption };
+  return { plotOptions, medianFilter, medianThreshold, nextDaysLength, sortOption };
 }

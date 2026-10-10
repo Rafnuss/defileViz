@@ -1,84 +1,64 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-    <div class="container">
-      <!-- Brand -->
-      <a class="navbar-brand d-flex align-items-center mb-0 h1" href="#">
-        <img
-          src="/defile_logo_72.webp"
-          alt="Défilé de l'Ecluse"
-          class="me-2"
-          width="36"
-          height="36"
-        />
-        {{ $t("nav.title") }}
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="#">
+        <img src="/defile_logo_72.webp" alt="" width="40" height="40" />
+        <span class="brand-text">
+          <span class="brand-name">Défilé de l'Ecluse</span>
+          <span class="brand-sub">{{ $t("nav.subtitle") }}</span>
+        </span>
       </a>
-
-      <!-- Date selector (desktop: center, mobile: below brand) -->
-      <div v-if="page === 'forecast'" class="d-none d-lg-flex mx-auto align-items-center">
-        <button
-          class="btn btn-outline-light btn-sm me-2"
-          :disabled="isLoadingData"
-          :title="$t('common.previousDay')"
-          @click="changeDateByDays(-1)"
+      <nav class="page-tabs" :aria-label="$t('nav.pages')">
+        <a
+          href="#"
+          :class="{ active: page === 'forecast' }"
+          :aria-current="page === 'forecast' ? 'page' : null"
+          >{{ $t("nav.forecast") }}</a
         >
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <input
-          v-model="selectedDate"
-          type="date"
-          :disabled="isLoadingData"
-          :max="todaysDate"
-          class="form-control form-control-sm text-center w-auto"
-          style="min-width: 150px"
-        />
-        <button
-          v-show="!isToday"
-          class="btn btn-outline-light btn-sm ms-2"
-          :disabled="isLoadingData"
-          :title="$t('common.nextDay')"
-          @click="changeDateByDays(1)"
+        <a
+          href="#explore"
+          :class="{ active: page === 'explore' }"
+          :aria-current="page === 'explore' ? 'page' : null"
+          >{{ $t("nav.explore") }}</a
         >
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <!-- Loading indicator with fixed space -->
-        <div
-          class="ms-2 d-flex align-items-center justify-content-center"
-          style="width: 24px; height: 24px"
+      </nav>
+      <div class="header-end">
+        <a
+          href="https://github.com/AmedeeRoy/defile-migration-forecast"
+          target="_blank"
+          rel="noopener"
+          class="icon-link-btn"
+          :title="$t('footer.modelRepo') + ' (GitHub)'"
+          :aria-label="$t('footer.modelRepo') + ' (GitHub)'"
         >
-          <div
-            v-show="isLoadingData"
-            class="spinner-border spinner-border-sm text-light"
-            role="status"
-          >
-            <span class="visually-hidden">{{ $t("common.loading") }}</span>
-          </div>
-        </div>
+          <i class="bi bi-github"></i>
+        </a>
+        <select
+          v-model="locale"
+          class="form-select form-select-sm lang-select"
+          aria-label="Language"
+        >
+          <option v-for="lang in LANGUAGE_OPTIONS" :key="lang.code" :value="lang.code">
+            {{ lang.shortName }}
+          </option>
+        </select>
       </div>
+    </div>
+  </header>
 
-      <!-- Hamburger menu button -->
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNav"
-        aria-controls="navbarNav"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <!-- Collapsible navbar content -->
-      <div id="navbarNav" class="collapse navbar-collapse">
-        <!-- Mobile date selector -->
-        <div
-          v-if="page === 'forecast'"
-          class="d-lg-none d-flex justify-content-center align-items-center py-3 border-bottom border-light border-opacity-25 mb-3"
-        >
+  <main>
+    <div v-if="page === 'explore'" class="container">
+      <ExplorePage :initial-taxon="exploreTaxon" @select="onExploreSelect" />
+    </div>
+    <div v-else class="container">
+      <!-- The day shown, its count on Trektellen and the display settings -->
+      <div class="toolbar">
+        <div class="date-nav">
           <button
-            class="btn btn-outline-light btn-sm me-2"
+            class="btn btn-outline-secondary btn-sm"
             :disabled="isLoadingData"
             :title="$t('common.previousDay')"
+            :aria-label="$t('common.previousDay')"
             @click="changeDateByDays(-1)"
           >
             <i class="bi bi-chevron-left"></i>
@@ -88,194 +68,157 @@
             type="date"
             :disabled="isLoadingData"
             :max="todaysDate"
-            class="form-control form-control-sm text-center w-auto"
-            style="min-width: 150px"
+            class="form-control form-control-sm date-input"
+            :aria-label="$t('plots.date')"
           />
           <button
-            v-show="!isToday"
-            class="btn btn-outline-light btn-sm ms-2"
-            :disabled="isLoadingData"
+            class="btn btn-outline-secondary btn-sm"
+            :disabled="isLoadingData || isToday"
             :title="$t('common.nextDay')"
+            :aria-label="$t('common.nextDay')"
             @click="changeDateByDays(1)"
           >
             <i class="bi bi-chevron-right"></i>
           </button>
-          <!-- Loading indicator with fixed space -->
-          <div
-            class="ms-2 d-flex align-items-center justify-content-center"
-            style="width: 24px; height: 24px"
+          <button
+            v-if="!isToday"
+            class="btn btn-link btn-sm"
+            :disabled="isLoadingData"
+            @click="selectedDate = todaysDate"
           >
-            <div
+            {{ $t("common.today") }}
+          </button>
+          <span class="spinner-slot">
+            <span
               v-show="isLoadingData"
-              class="spinner-border spinner-border-sm text-light"
+              class="spinner-border spinner-border-sm"
               role="status"
-            ></div>
-          </div>
+              :aria-label="$t('common.loading')"
+            ></span>
+          </span>
         </div>
-
-        <!-- Navigation links -->
-        <ul class="navbar-nav ms-auto align-items-lg-center text-center">
-          <li class="nav-item">
-            <a class="nav-link" :class="{ active: page === 'forecast' }" href="#">{{
-              $t("nav.forecast")
-            }}</a>
-          </li>
-          <li class="nav-item me-lg-2">
-            <a class="nav-link" :class="{ active: page === 'explore' }" href="#explore">{{
-              $t("nav.explore")
-            }}</a>
-          </li>
-          <!-- Language Switcher -->
-          <li class="nav-item">
-            <div class="d-flex align-items-center">
-              <select
-                v-model="locale"
-                class="form-select form-select-sm bg-primary text-white border-light"
-              >
-                <option v-for="lang in LANGUAGE_OPTIONS" :key="lang.code" :value="lang.code">
-                  {{ lang.flag }} {{ lang.shortName }}
-                </option>
-              </select>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a
-              href="https://github.com/AmedeeRoy/defile-migration-forecast"
-              target="_blank"
-              rel="noopener"
-              class="nav-link"
-              title="GitHub"
-            >
-              <i class="bi bi-github fs-4"></i>
-              <span class="d-lg-none ms-2">GitHub</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a
-              :href="`https://www.trektellen.org/count/view/2422/${selectedDate.replace(/-/g, '')}`"
-              target="_blank"
-              rel="noopener"
-              class="nav-link d-flex align-items-center justify-content-center justify-content-lg-start"
-            >
-              <img
-                src="/trektellen_logo.png"
-                alt="Défilé de l'Ecluse"
-                style="height: 24px; width: auto"
-              />
-              <span class="ms-2">Trektellens</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <button
-              class="nav-link btn btn-link text-white p-0 border-0 d-flex align-items-center justify-content-center justify-content-lg-start"
-              data-bs-toggle="modal"
-              data-bs-target="#settingsModal"
-            >
-              <i class="bi bi-gear fs-4"></i>
-              <span class="d-lg-none ms-2">{{ $t("nav.settings") }}</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-
-  <div v-if="page === 'explore'" class="container">
-    <ExplorePage :initial-taxon="exploreTaxon" @select="onExploreSelect" />
-  </div>
-  <div v-else class="container">
-    <IntroSection />
-
-    <TodayOverview v-if="species && species.length > 0" :species="todayRows" />
-    <div v-if="loadError && !isLoadingData" class="alert alert-warning" role="alert">
-      {{ $t("common.noForecast") }}
-    </div>
-    <div
-      v-else-if="!isLoadingData && species.length && !speciesDisplay.length"
-      class="alert alert-info"
-      role="alert"
-    >
-      {{ $t("common.outOfSeason") }}
-    </div>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="mb-0">{{ $t("plots.hourlyPrediction") }}</h2>
-      <button class="btn btn-outline-secondary btn-sm" type="button" @click="toggleAllSpecies">
-        <i :class="allCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
-        {{ allCollapsed ? $t("plots.expandAll") : $t("plots.collapseAll") }}
-      </button>
-    </div>
-    <div class="row">
-      <div v-for="sp in speciesDisplay" :key="sp.species" class="col-12 mb-1">
-        <div class="card h-100">
-          <div
-            class="card-header d-flex justify-content-between align-items-center"
-            style="cursor: pointer"
-            @click="sp.collapsed = !sp.collapsed"
+        <div class="toolbar-end">
+          <a
+            :href="`https://www.trektellen.org/count/view/2422/${selectedDate.replace(/-/g, '')}`"
+            target="_blank"
+            rel="noopener"
+            class="btn btn-outline-secondary btn-sm"
           >
-            <h5 :id="sp.species" class="card-title my-0 d-flex align-items-center">
-              <img
-                :src="`/defileViz/species_icon/${sp.species
-                  .toLowerCase()
-                  .replace(/\s+/g, '_')}.svg`"
-                :alt="sp.species + ' icon'"
-                class="me-2 flex-shrink-0"
-                width="26"
-                height="26"
-                @error="$event.target.style.display = 'none'"
+            <img src="/trektellen_logo.png" alt="" class="btn-logo" />
+            {{ $t("nav.countOnTrektellen") }}
+            <i class="bi bi-box-arrow-up-right small ms-1"></i>
+          </a>
+          <button
+            class="btn btn-outline-secondary btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#settingsModal"
+          >
+            <i class="bi bi-sliders me-1"></i>{{ $t("nav.settings") }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="loadError && !isLoadingData" class="alert alert-warning load-alert" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ $t("common.noForecast") }}
+      </div>
+
+      <IntroSection />
+
+      <TodayOverview v-if="speciesDisplay.length" :species="todayRows" />
+      <div
+        v-if="!isLoadingData && species.length && !speciesDisplay.length"
+        class="alert alert-info"
+        role="alert"
+      >
+        {{ $t("common.outOfSeason") }}
+      </div>
+
+      <div v-if="speciesDisplay.length" class="section-head">
+        <h2>{{ $t("plots.hourlyPrediction") }}</h2>
+        <button
+          class="btn btn-outline-secondary btn-sm ms-auto"
+          type="button"
+          @click="toggleAllSpecies"
+        >
+          <i :class="allCollapsed ? 'bi bi-arrows-expand' : 'bi bi-arrows-collapse'"></i>
+          {{ allCollapsed ? $t("plots.expandAll") : $t("plots.collapseAll") }}
+        </button>
+        <p class="section-note">
+          <span class="swatch predicted"></span>{{ $t("plots.forecast") }}
+          <span class="swatch counted ms-3"></span>{{ $t("table.counted") }}
+          <span class="swatch band ms-3"></span>{{ $t("plots.pastYears") }}
+        </p>
+      </div>
+      <div
+        v-for="sp in speciesDisplay"
+        :key="sp.species"
+        class="card species-card"
+        :class="{ collapsed: sp.collapsed }"
+      >
+        <button
+          type="button"
+          class="species-head"
+          :aria-expanded="!sp.collapsed"
+          @click="sp.collapsed = !sp.collapsed"
+        >
+          <img
+            :src="`/defileViz/species_icon/${sp.species.toLowerCase().replace(/\s+/g, '_')}.svg`"
+            alt=""
+            width="28"
+            height="28"
+            @error="$event.target.style.display = 'none'"
+          />
+          <h3 :id="sp.species">{{ $t(`species.${sp.species}`, sp.species) }}</h3>
+          <span class="species-totals tnum">
+            <span v-if="sp.forecast[0]?.predTotal != null" class="total predicted">
+              <span class="swatch predicted"></span>{{ fmtTotal(sp.forecast[0].predTotal) }}
+              {{ $t("table.predicted").toLowerCase() }}
+            </span>
+            <span v-if="sp.trektellen?.count > 0" class="total counted">
+              <span class="swatch counted"></span>{{ sp.trektellen.count }}
+              {{ $t("table.counted").toLowerCase() }}
+            </span>
+          </span>
+          <i class="bi bi-chevron-down chevron"></i>
+        </button>
+        <div v-if="!sp.collapsed" class="card-body">
+          <div class="row g-4">
+            <div v-if="plotOptions.find((p) => p.name === 'today').show" class="col-lg-6">
+              <PlotToday
+                v-if="sp.historical[0]"
+                :historical="sp.historical[0]"
+                :forecast="sp.forecast[0]"
+                :trektellen="sp.trektellen"
+                :date="sp.date[0]"
               />
-              {{ $t(`species.${sp.species}`, sp.species) }}
-            </h5>
-            <button
-              class="btn btn-sm btn-outline-secondary"
-              type="button"
-              @click="sp.collapsed = !sp.collapsed"
-            >
-              <i :class="sp.collapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
-            </button>
-          </div>
-          <div v-if="!sp.collapsed" class="card-body">
-            <div class="row">
-              <div v-if="plotOptions.find((p) => p.name === 'today').show" class="col-6">
-                <PlotToday
-                  v-if="sp.historical[0]"
-                  :historical="sp.historical[0]"
-                  :forecast="sp.forecast[0]"
-                  :trektellen="sp.trektellen"
-                  :date="sp.date[0]"
-                />
-              </div>
-              <div v-if="plotOptions.find((p) => p.name === 'nextDays').show" class="col-6">
-                <PlotNextDays
-                  v-if="
-                    sp.historical &&
-                    sp.historical.length > 1 &&
-                    sp.forecast &&
-                    sp.forecast.length > 1
-                  "
-                  :historical="sp.historical.slice(1, nextDaysLength + 1)"
-                  :forecast="sp.forecast.slice(1, nextDaysLength + 1)"
-                  :date="sp.date.slice(1, nextDaysLength + 1)"
-                />
-              </div>
-              <div v-if="plotOptions.find((p) => p.name === 'season').show" class="col-12">
-                <PlotSeason
-                  v-if="sp"
-                  :season="species_doy_statistics.find((s) => s.species === sp.species)"
-                  :date="sp.date[0]"
-                  :total-predicted="sp.forecast[0]?.predTotal"
-                  :total-observed="sp.trektellen?.count"
-                  :species-name="sp.species"
-                />
-              </div>
+            </div>
+            <div v-if="plotOptions.find((p) => p.name === 'nextDays').show" class="col-lg-6">
+              <PlotNextDays
+                v-if="
+                  sp.historical && sp.historical.length > 1 && sp.forecast && sp.forecast.length > 1
+                "
+                :historical="sp.historical.slice(1, nextDaysLength + 1)"
+                :forecast="sp.forecast.slice(1, nextDaysLength + 1)"
+                :date="sp.date.slice(1, nextDaysLength + 1)"
+              />
+            </div>
+            <div v-if="plotOptions.find((p) => p.name === 'season').show" class="col-12">
+              <PlotSeason
+                v-if="sp"
+                :season="species_doy_statistics.find((s) => s.species === sp.species)"
+                :date="sp.date[0]"
+                :total-predicted="sp.forecast[0]?.predTotal"
+                :total-observed="sp.trektellen?.count"
+                :species-name="sp.species"
+              />
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Replace debug object dump -->
-    <PlotWeather v-if="weather" :weather="weather" />
-  </div>
+      <PlotWeather v-if="weather" :weather="weather" />
+    </div>
+  </main>
 
   <!-- Settings Modal -->
   <div
@@ -298,57 +241,78 @@
         </div>
         <div class="modal-body">
           <!-- Plot selection -->
-          <div class="mb-3 form-group">
-            <label for="plots">{{ $t("settings.plotsToDisplay") }}</label>
+          <div class="mb-4">
+            <label for="plots" class="form-label">{{ $t("settings.plotsToDisplay") }}</label>
             <div id="plots" class="btn-group w-100" role="group" aria-label="Plot type selector">
               <button
                 v-for="plot in plotOptions"
                 :key="plot.name"
                 type="button"
-                class="btn btn-secondary"
-                :class="{ active: plot.show }"
+                class="btn"
+                :class="plot.show ? 'btn-secondary' : 'btn-outline-secondary'"
+                :aria-pressed="plot.show"
                 @click="plot.show = !plot.show"
               >
+                <i :class="plot.show ? 'bi bi-check-lg' : 'bi bi-dash'" class="me-1"></i>
                 {{ $t(`settings.${plot.name}`) }}
               </button>
             </div>
           </div>
-          <!-- Threshold input -->
-          <div class="mb-3 form-group">
-            <label for="thr">{{ $t("settings.threshold") }}</label>
-            <input
-              id="thr"
-              v-model.number="medianThreshold"
-              type="number"
-              step="1"
-              min="0"
-              max="100"
-              class="form-control"
-              aria-describedby="thrHelp"
-            />
+          <!-- Species filter -->
+          <div class="mb-4">
+            <div class="form-check form-switch">
+              <input
+                id="thrOn"
+                v-model="medianFilter"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+              />
+              <label class="form-check-label" for="thrOn">{{ $t("settings.threshold") }}</label>
+            </div>
+            <div class="input-group input-group-sm threshold-input mt-2">
+              <span class="input-group-text">{{ $t("settings.thresholdAbove") }}</span>
+              <input
+                id="thr"
+                v-model.number="medianThreshold"
+                type="number"
+                step="1"
+                min="0"
+                class="form-control"
+                :disabled="!medianFilter"
+                aria-describedby="thrHelp"
+              />
+              <span class="input-group-text">{{ $t("settings.birds") }}</span>
+            </div>
             <small id="thrHelp" class="form-text text-muted">{{
               $t("settings.thresholdHelp")
             }}</small>
           </div>
           <!-- Next days length -->
-          <div class="mb-3 form-group">
-            <label for="nextDays">{{ $t("settings.nextDaysCount") }}</label>
+          <div class="mb-4">
+            <label for="nextDays" class="form-label d-flex">
+              {{ $t("settings.nextDaysCount") }}
+              <strong class="ms-auto tnum">{{ nextDaysLength }}</strong>
+            </label>
             <input
               id="nextDays"
               v-model.number="nextDaysLength"
-              type="number"
+              type="range"
               step="1"
               min="1"
               max="7"
-              class="form-control"
+              class="form-range"
               aria-describedby="nextDaysHelp"
             />
+            <div class="range-ticks tnum" aria-hidden="true">
+              <span v-for="n in 7" :key="n">{{ n }}</span>
+            </div>
             <small id="nextDaysHelp" class="form-text text-muted">{{
               $t("settings.nextDaysHelp")
             }}</small>
           </div>
           <!-- Sort selection -->
-          <div class="mb-3 form-group">
+          <div class="mb-2">
             <label for="sortOption" class="form-label">{{ $t("settings.sortBy") }}</label>
             <select id="sortOption" v-model="sortOption" class="form-select">
               <option value="taxonomy">{{ $t("settings.taxonomy") }}</option>
@@ -419,17 +383,20 @@ const selectedDate = ref(todaysDate.value);
 const isLoadingData = ref(false);
 const loadError = ref(null);
 
-const { plotOptions, medianThreshold, nextDaysLength, sortOption } = useSettings();
+const { plotOptions, medianFilter, medianThreshold, nextDaysLength, sortOption } = useSettings();
 
 // Computed properties
 const isToday = computed(() => selectedDate.value === todaysDate.value);
 
 const speciesDisplay = computed(() => {
-  const filtered = species.value.filter(
-    (sp) =>
-      sp.historical[0]?.median &&
-      sp.historical[0].median * sp.historical[0].window.nHours > medianThreshold.value,
-  );
+  // One filter and one order for both the overview and the hourly cards
+  const filtered = medianFilter.value
+    ? species.value.filter(
+        (sp) =>
+          sp.historical[0]?.median &&
+          sp.historical[0].median * sp.historical[0].window.nHours > medianThreshold.value,
+      )
+    : species.value;
 
   const sortFunctions = {
     taxonomy: () => filtered,
@@ -449,13 +416,16 @@ const speciesDisplay = computed(() => {
 });
 
 const todayRows = computed(() =>
-  species.value.map((sp) => ({
+  speciesDisplay.value.map((sp) => ({
     species: sp.species,
     historical: sp.historical[0],
     forecast: sp.forecast[0],
     trektellen: sp.trektellen,
   })),
 );
+
+// Daily totals in the species headers: whole birds, or one decimal below one bird
+const fmtTotal = (x) => (x >= 1 ? Math.round(x) : x.toFixed(1));
 
 const allCollapsed = computed(() => {
   return species.value.every((sp) => sp.collapsed);
@@ -598,12 +568,220 @@ watch(locale, (newLocale) => {
 </script>
 
 <style>
-body {
-  padding-top: 80px;
+/* Header: the site, its pages, the language */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--dv-line);
+}
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: var(--dv-header-h);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--dv-ink);
+  text-decoration: none;
+}
+.brand:hover {
+  color: var(--dv-ink);
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.brand-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.brand-sub {
+  font-size: 0.75rem;
+  color: var(--dv-muted);
+}
+.page-tabs {
+  display: flex;
+  align-self: stretch;
+  gap: 1.25rem;
+}
+.page-tabs a {
+  display: flex;
+  align-items: center;
+  color: var(--dv-muted);
+  font-weight: 550;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.page-tabs a:hover {
+  color: var(--dv-ink);
+}
+.page-tabs a.active {
+  color: var(--dv-ink);
+  border-bottom-color: var(--dv-accent);
+}
+.header-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.icon-link-btn {
+  color: var(--dv-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.icon-link-btn:hover {
+  color: var(--dv-ink);
+}
+.lang-select {
+  width: auto;
+  min-width: 4.25rem;
+  padding-right: 1.75rem;
+  background-color: transparent;
 }
 
-/* Fix anchor links appearing behind fixed navbar */
+/* The day's forecast is missing: said right under the date */
+.load-alert {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+/* Settings */
+.threshold-input {
+  max-width: 16rem;
+}
+.range-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.3rem;
+  margin-top: -0.35rem;
+  font-size: 0.75rem;
+  color: var(--dv-faint);
+}
+
+/* Forecast toolbar: sticks under the header */
+.toolbar {
+  position: sticky;
+  top: var(--dv-header-h);
+  z-index: 1020;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0;
+  background: var(--dv-paper);
+  border-bottom: 1px solid var(--dv-line);
+  margin-bottom: 1rem;
+}
+.date-nav,
+.toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.toolbar-end {
+  margin-left: auto;
+  gap: 0.5rem;
+}
+.date-input {
+  width: auto;
+  min-width: 9.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.spinner-slot {
+  display: inline-flex;
+  width: 1.25rem;
+  color: var(--dv-muted);
+}
+.btn-logo {
+  height: 16px;
+  width: auto;
+  margin-right: 0.3rem;
+  vertical-align: -0.15rem;
+}
+
+/* Species cards */
+.species-card {
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+.species-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: 0;
+  text-align: left;
+  color: inherit;
+}
+.species-head:hover {
+  background: var(--dv-surface-2);
+}
+.species-head h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+.species-totals {
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--dv-muted);
+}
+.chevron {
+  color: var(--dv-faint);
+  transition: transform 0.15s;
+  transform: rotate(180deg);
+}
+.collapsed .chevron {
+  transform: none;
+}
+.species-card .card-body {
+  border-top: 1px solid var(--dv-line);
+}
+
+@media (max-width: 575.98px) {
+  .header-row {
+    gap: 0.75rem;
+  }
+  .brand-sub,
+  .icon-link-btn {
+    display: none;
+  }
+  .brand-name {
+    font-size: 0.95rem;
+  }
+  .page-tabs {
+    gap: 0.75rem;
+  }
+  .brand img {
+    width: 34px;
+    height: 34px;
+  }
+  .toolbar {
+    position: static;
+  }
+  .toolbar-end {
+    margin-left: 0;
+  }
+  .species-totals .total:not(:first-child) {
+    display: none;
+  }
+}
+
+/* Anchor links land below the sticky header and toolbar */
 :target {
-  scroll-margin-top: 80px;
+  scroll-margin-top: 120px;
 }
 </style>

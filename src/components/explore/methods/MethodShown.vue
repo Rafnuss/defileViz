@@ -238,8 +238,8 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../../utils/usePlot";
+import { usePlot, plotReact } from "../../../utils/usePlot";
+import { COLORS, alpha } from "../../../theme.js";
 import { doyLabel } from "../../../services/explore";
 import Tex from "../Tex.vue";
 
@@ -304,17 +304,17 @@ function plot() {
     (d) => d >= doy[0] && d <= doy.at(-1),
   );
   const p = passage.value;
-  Plotly.react(
+  plotReact(
     seasonDiv.value,
     [
       {
         x: doy,
         y: share.map((v) => (v == null ? null : v)),
         type: "bar",
-        // a day nobody counted, its share estimated, paler
+        // a day nobody counted, its share estimated by the model
         marker: {
           color: count.map((n) =>
-            filled.value && n == null ? "rgba(31, 119, 180, 0.25)" : "rgba(31, 119, 180, 0.6)",
+            filled.value && n == null ? alpha(COLORS.predicted, 0.35) : alpha(COLORS.counted, 0.6),
           ),
         },
         text: doy.map((d) => doyLabel(d, locale.value)),
@@ -324,7 +324,7 @@ function plot() {
         x: doy,
         y: share.map((v) => (v == null ? 0.004 : null)),
         type: "bar",
-        marker: { color: "rgba(150, 150, 150, 0.5)" },
+        marker: { color: alpha(COLORS.faint, 0.5) },
         hoverinfo: "skip",
       },
       {
@@ -332,7 +332,7 @@ function plot() {
         y: running(share, doy),
         yaxis: "y2",
         mode: "lines",
-        line: { color: "#212529", width: 2 },
+        line: { color: COLORS.ink, width: 2 },
         hoverinfo: "skip",
       },
     ],
@@ -353,7 +353,6 @@ function plot() {
         fixedrange: true,
         tickformat: ".0%",
         title: { text: "share per day" },
-        gridcolor: "rgba(0,0,0,0.08)",
       },
       yaxis2: {
         fixedrange: true,
@@ -373,7 +372,7 @@ function plot() {
               yref: "paper",
               y0: 0,
               y1: 1,
-              line: { color: "#d62728", dash: k === "q50" ? "dash" : "dot", width: 1.5 },
+              line: { color: COLORS.counted, dash: k === "q50" ? "dash" : "dot", width: 1.5 },
             })),
             ...(p.q50_lo != null
               ? [
@@ -384,7 +383,7 @@ function plot() {
                     yref: "paper",
                     y0: 0,
                     y1: 1,
-                    fillcolor: "rgba(214, 39, 40, 0.12)",
+                    fillcolor: alpha(COLORS.counted, 0.12),
                     line: { width: 0 },
                     layer: "below",
                   },

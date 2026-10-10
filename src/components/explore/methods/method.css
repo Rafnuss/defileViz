@@ -45,19 +45,19 @@
   }
   /* Model terms, one colour each (same as C in the script) */
   .t-trend {
-    color: #1f77b4;
+    color: var(--dv-predicted);
   }
   .t-year {
-    color: #d62728;
+    color: var(--dv-counted);
   }
   .t-season {
-    color: #2ca02c;
+    color: var(--dv-sage);
   }
   .t-shift {
-    color: #9467bd;
+    color: var(--dv-plum);
   }
   .t-episode {
-    color: #e66c00;
+    color: var(--dv-ochre);
   }
   .terms {
     width: 100%;
@@ -126,39 +126,39 @@
     stroke-width: 1.5;
   }
   .box-data {
-    fill: #f1f3f5;
-    stroke: #adb5bd;
+    fill: var(--dv-surface-2);
+    stroke: var(--dv-faint);
   }
   .box-cov {
-    fill: #e7f1fb;
-    stroke: #1f77b4;
+    fill: var(--dv-predicted-soft);
+    stroke: var(--dv-predicted);
   }
   .box-model {
-    fill: #eaf6ea;
-    stroke: #2ca02c;
+    fill: color-mix(in srgb, var(--dv-sage) 10%, white);
+    stroke: var(--dv-sage);
   }
   .box-out {
-    fill: #fff4e5;
-    stroke: #e66c00;
+    fill: var(--dv-gold-soft);
+    stroke: var(--dv-ochre);
   }
   .flow-title {
     text-anchor: middle;
     font-weight: 700;
     font-size: 18px;
-    fill: #212529;
+    fill: var(--dv-ink);
   }
   .flow-line {
     text-anchor: middle;
     font-size: 15px;
-    fill: #495057;
+    fill: var(--dv-muted);
   }
   .flow-arrow {
-    stroke: #6c757d;
+    stroke: var(--dv-muted);
     stroke-width: 2;
     fill: none;
   }
   .arrowhead {
-    fill: #6c757d;
+    fill: var(--dv-muted);
   }
   /* Light callouts: Litera's alerts are solid blocks of colour */
   .callout {
@@ -178,7 +178,7 @@
   }
   .callout-success {
     --c: var(--bs-success);
-    --bg: var(--bs-success-bg-subtle);
+    --bg: color-mix(in srgb, var(--dv-sage) 10%, white);
   }
   .callout-warning {
     --c: var(--bs-warning);
@@ -225,7 +225,7 @@
     margin-top: 1px;
     border-radius: 4px;
     background: var(--bs-primary);
-    border: 2px solid #fff;
+    border: 2px solid var(--dv-surface);
     box-shadow: 0 0 0 1px var(--bs-primary);
     cursor: ew-resize;
   }
@@ -235,7 +235,7 @@
     height: 18px;
     border-radius: 4px;
     background: var(--bs-primary);
-    border: 2px solid #fff;
+    border: 2px solid var(--dv-surface);
     box-shadow: 0 0 0 1px var(--bs-primary);
     cursor: ew-resize;
   }
@@ -249,10 +249,10 @@
   .hours-track {
     left: 8px;
     right: 8px;
-    background: var(--bs-gray-300);
+    background: var(--dv-line);
   }
   .hours-sel {
-    background: #1f77b4;
+    background: var(--dv-predicted);
   }
   .hours-hint {
     font-size: 0.75rem;

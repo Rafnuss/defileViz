@@ -76,8 +76,8 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../../utils/usePlot";
+import { usePlot, plotReact } from "../../../utils/usePlot";
+import { COLORS } from "../../../theme.js";
 
 const { locale } = useI18n();
 
@@ -120,14 +120,16 @@ const visible = usePlot(historyDiv);
 function plotHistory() {
   if (!visible.value || !historyDiv.value || !props.effort) return;
   const e = props.effort.filter((r) => r.year <= lastYear.value);
-  Plotly.react(
+  plotReact(
     historyDiv.value,
     [
       {
         x: e.map((r) => r.year),
         y: e.map((r) => r.window_days),
         type: "bar",
-        marker: { color: e.map((r) => (r.year >= startYear.value ? "#1f77b4" : "#adb5bd")) },
+        marker: {
+          color: e.map((r) => (r.year >= startYear.value ? COLORS.muted : COLORS.historyInner)),
+        },
         hovertemplate: "%{x}: %{y} days<extra></extra>",
       },
     ],
@@ -138,7 +140,7 @@ function plotHistory() {
       showlegend: false,
       font: { size: 11 },
       xaxis: { fixedrange: true },
-      yaxis: { fixedrange: true, title: { text: "days" }, gridcolor: "rgba(0,0,0,0.08)" },
+      yaxis: { fixedrange: true, title: { text: "days" } },
       shapes: Object.keys(PROTOCOL).map((y) => ({
         type: "line",
         x0: y - 0.5,
@@ -146,7 +148,7 @@ function plotHistory() {
         yref: "paper",
         y0: 0,
         y1: 1,
-        line: { color: "#6c757d", dash: "dot", width: 1 },
+        line: { color: COLORS.muted, dash: "dot", width: 1 },
       })),
       annotations: Object.entries(PROTOCOL).map(([y, text], k) => ({
         x: y - 0.5,
@@ -156,7 +158,7 @@ function plotHistory() {
         text,
         showarrow: false,
         xanchor: "right",
-        font: { size: 10, color: "#6c757d" },
+        font: { size: 10, color: COLORS.muted },
       })),
     },
     { displayModeBar: false, responsive: true },

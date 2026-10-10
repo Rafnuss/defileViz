@@ -338,14 +338,14 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onOutside));
   vertical-align: baseline;
 }
 .story-full {
-  background: #2e8b57;
+  background: var(--dv-sage);
 }
 .story-caveat {
-  background: #e0a100;
+  background: var(--dv-gold);
 }
 .story-counts {
   background: transparent;
-  border: 1.5px solid #9aa0a6;
+  border: 1.5px solid var(--dv-faint);
 }
 .picker-legend {
   padding: 0.35rem 0.75rem;

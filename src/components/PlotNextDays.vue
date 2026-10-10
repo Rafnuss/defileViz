@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h6 class="text-muted mb-2">{{ $t("plots.nextDays") }}...</h6>
+    <h4 class="plot-label">{{ $t("plots.nextDays") }}</h4>
     <div ref="plotDiv" class="plot-container"></div>
   </div>
 </template>
@@ -8,8 +8,8 @@
 <script setup>
 import { ref, watch, nextTick, inject } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../utils/usePlot";
+import { usePlot, plotReact } from "../utils/usePlot";
+import { COLORS, alpha } from "../theme.js";
 import { createHistoricalLineTrace, ratioInWindow } from "../utils/stats";
 import { localUtcOffset } from "../utils/daylight";
 
@@ -76,7 +76,7 @@ async function createPlot() {
       name: t("plots.forecast"),
       customdata: custom,
       hovertemplate: `%{customdata}<br>${t("plots.dailyCount")}: %{y:.0f}<extra></extra>`,
-      marker: { color: "#4e79a7" },
+      marker: { color: alpha(COLORS.predicted, 0.8) },
     });
   }
 
@@ -122,7 +122,7 @@ async function createPlot() {
           ...upperTrace,
           line: { ...upperTrace.line, width: 0 },
           fill: "tonexty",
-          fillcolor: "rgba(128,128,128,0.25)",
+          fillcolor: alpha(COLORS.historyInner, 0.45),
           hoverinfo: "skip",
           name: d === 0 ? t("plots.quantileRange") : undefined,
           showlegend: false,
@@ -137,7 +137,7 @@ async function createPlot() {
         xDay,
         ratio,
         hist.median,
-        "black",
+        COLORS.median,
         "solid",
         t("plots.median"),
         true,
@@ -181,7 +181,7 @@ async function createPlot() {
   };
 
   try {
-    await Plotly.react(plotDiv.value, traces, layout, {
+    await plotReact(plotDiv.value, traces, layout, {
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false,

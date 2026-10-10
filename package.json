@@ -16,7 +16,6 @@
   "dependencies": {
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "bootswatch": "^5.3.8",
     "katex": "^0.19.0",
     "netcdfjs": "^4.0.0",
     "plotly.js-basic-dist-min": "^4.1.1",

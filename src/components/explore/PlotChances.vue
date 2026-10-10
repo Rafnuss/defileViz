@@ -5,8 +5,8 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS, alpha } from "../../theme.js";
 import { doyLabel } from "../../services/explore";
 
 const { t, locale } = useI18n();
@@ -20,7 +20,7 @@ const props = defineProps({
 
 const THRESHOLDS = [1, 10, 100, 1000];
 // One hue, light to dark as the threshold rises: a ladder, not four rival series
-const COLORS = ["#9ecae1", "#6baed6", "#2171b5", "#08306b"];
+const LADDER = COLORS.blues;
 const TICKS = [196, 213, 227, 244, 258, 274, 288, 305, 319, 335];
 
 const plotDiv = ref(null);
@@ -35,7 +35,7 @@ function createPlot() {
       x: c.doy,
       y: c[`at_least_${n}`],
       mode: "lines",
-      line: { color: COLORS[i], width: 1.75, shape: "spline", smoothing: 0.6 },
+      line: { color: LADDER[i], width: 1.75, shape: "spline", smoothing: 0.6 },
       name: t("explore.when.atLeast", { n: n.toLocaleString(locale.value) }),
       text: c.doy.map((d) => doyLabel(d, locale.value)),
       hovertemplate: `%{text}: %{y:.0%}<extra>${t("explore.when.atLeast", { n })}</extra>`,
@@ -51,7 +51,7 @@ function createPlot() {
       x1: props.passage.q90,
       y0: 0,
       y1: 1,
-      fillcolor: "rgba(108, 117, 125, 0.08)",
+      fillcolor: alpha(COLORS.faint, 0.08),
       line: { width: 0 },
       layer: "below",
     });
@@ -63,11 +63,11 @@ function createPlot() {
       yref: "paper",
       text: t("explore.when.mainPassage"),
       showarrow: false,
-      font: { size: 11, color: "#6c757d" },
+      font: { size: 11, color: COLORS.muted },
     });
   }
   const ticks = TICKS.filter((d) => d >= c.doy[0] - 7 && d <= c.doy.at(-1) + 7);
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     traces,
     {

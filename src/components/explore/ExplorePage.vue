@@ -1,12 +1,5 @@
 <template>
   <div class="mt-3 explore">
-    <h2>{{ $t("explore.title") }}</h2>
-    <p class="text-muted small">
-      <a href="#" class="text-nowrap" @click.prevent="openMethod('counts')">
-        <i class="bi bi-book me-1"></i>{{ $t("explore.method.link") }}
-      </a>
-    </p>
-
     <div v-if="loadError" class="alert alert-warning">{{ loadError }}</div>
 
     <!-- The species: picker, links and its general account -->
@@ -112,12 +105,6 @@
       <!-- 2. How many each year -->
       <section class="mb-4">
         <h4 class="section-title">{{ $t("explore.many.title") }}</h4>
-        <AuthoredText
-          v-if="account('evolution')"
-          class="intro"
-          :label="$t('explore.account.evolution')"
-          :text="account('evolution')"
-        />
         <div class="card">
           <div class="card-body">
             <FigureHead
@@ -140,6 +127,12 @@
               :selected="selectedYear"
               @select="(y) => (selectedYear = y)"
             />
+            <AuthoredText
+              v-if="account('evolution')"
+              class="intro mt-2"
+              :label="$t('explore.account.evolution')"
+              :text="account('evolution')"
+            />
             <div v-if="selectedRow" class="year-panel">
               <div class="d-flex flex-wrap align-items-baseline gap-3 mb-1">
                 <span class="fs-5 fw-bold">{{ selectedYear }}</span>
@@ -153,7 +146,11 @@
                     fmt(selectedRow["q90"])
                   }})</span
                 >
+                <span class="small text-muted ms-auto">
+                  <i class="bi bi-hand-index me-1"></i>{{ $t("explore.many.clickYear") }}
+                </span>
               </div>
+              <p class="small text-muted mb-1">{{ $t("explore.many.daysHelp") }}</p>
               <PlotYearDays
                 v-if="trend?.days"
                 :days="trend.days"
@@ -305,6 +302,7 @@ import {
   clock,
   fate,
 } from "../../services/explore";
+import { COLORS } from "../../theme.js";
 import AuthoredText from "./AuthoredText.vue";
 import PlotAnnual from "./PlotAnnual.vue";
 import PlotChances from "./PlotChances.vue";
@@ -538,8 +536,8 @@ const timingShift = computed(() => {
 });
 const demography = computed(() =>
   [
-    ["age", t("explore.who.age"), t("explore.who.ageHelp"), "#e66c00"],
-    ["sex", t("explore.who.sex"), t("explore.who.sexHelp"), "#1f77b4"],
+    ["age", t("explore.who.age"), t("explore.who.ageHelp"), COLORS.ochre],
+    ["sex", t("explore.who.sex"), t("explore.who.sexHelp"), COLORS.plum],
   ]
     .filter(([k]) => data.value[k])
     .map(([key, title, help, color]) => ({
@@ -594,9 +592,13 @@ watch(
 .section-title {
   font-size: 1.15rem;
   font-weight: 600;
-  border-bottom: 2px solid var(--bs-primary);
+  color: var(--dv-ink);
+  border-bottom: 1px solid var(--dv-line);
   padding-bottom: 0.25rem;
   margin-bottom: 0.75rem;
+}
+.key .fs-5 {
+  font-variant-numeric: tabular-nums;
 }
 .key.caveat {
   border-color: var(--bs-warning);

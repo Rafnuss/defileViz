@@ -1,5 +1,7 @@
 <template>
-  <h2>{{ $t("weather.title") }}</h2>
+  <div class="section-head">
+    <h2>{{ $t("weather.title") }}</h2>
+  </div>
   <div class="card mb-4">
     <div class="card-header d-flex flex-wrap gap-3 align-items-center">
       <label class="form-label mb-0 small d-inline-flex align-items-center gap-1">
@@ -41,6 +43,8 @@
 <script setup>
 import { ref, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import Plotly from "plotly.js-basic-dist-min";
+import { plotReact } from "../utils/usePlot";
+import { COLORS } from "../theme.js";
 
 const props = defineProps({
   weather: { type: Object, required: true },
@@ -199,8 +203,8 @@ function render() {
     type: "scatter",
     mode: "lines+markers",
     name: label,
-    line: { width: 2 },
-    marker: { size: 5 },
+    line: { width: 1.75, color: COLORS.ink },
+    marker: { size: 4, color: COLORS.ink },
     hovertemplate: `%{x|%Y-%m-%d %H:%M}<br>${label}: %{y:.3f}${
       meta.unit ? " " + meta.unit : ""
     }<extra></extra>`,
@@ -211,7 +215,7 @@ function render() {
     yaxis: { title: { text: label + unitSuffix }, automargin: true },
     showlegend: false,
   };
-  Plotly.react(plotEl.value, [trace], layout, { displaylogo: false, responsive: true });
+  plotReact(plotEl.value, [trace], layout, { displaylogo: false, responsive: true });
   requestAnimationFrame(() => {
     if (plotEl.value) Plotly.Plots.resize(plotEl.value);
   });

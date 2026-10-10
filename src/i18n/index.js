@@ -14,6 +14,9 @@ const messages = {
     nav: {
       title: "Defile Bird Forecasts",
 
+      subtitle: "Raptor migration count",
+      pages: "Pages",
+      countOnTrektellen: "Count on Trektellen",
       settings: "Settings",
     },
     intro: {
@@ -37,15 +40,13 @@ const messages = {
       modeQuantile: "Quantile",
       distribution: "Historical distribution",
       explanation: {
-        title: "Table columns explained",
-        species: "Bird species name",
-        observed: "Observed total so far species (live data if available)",
-        predicted: "Predicted total number of individuals expected species (from 6am to 7pm)",
-        quantile:
-          "How species's prediction compares to past years (e.g., 90th means higher than 90% of previous years for this date)",
+        title: "How to read this chart",
+        predicted: "Blue circle: the model's forecast of the day's total.",
+        counted: "Rust circle: the count entered on Trektellen for the day so far.",
         distribution:
-          "Where the predicted and counted totals fall among past years for this date: light band 5–95%, dark band 20–80%, tick = median. Numbers use a log scale; Quantile shows the percentile directly.",
-        historicalMedian: "Typical (median) count for this date in past years",
+          "Grey bands: the totals counted on this date in past years. Light band 5–95%, dark band 20–80%, black tick the median.",
+        mode: "Numbers places the totals on a log scale; Quantile places them by their percentile among past years.",
+        values: "Hover or tap a circle or the median for its value.",
       },
     },
     plots: {
@@ -54,7 +55,7 @@ const messages = {
       collapseAll: "Collapse All",
       today: "Today",
       nextDays: "Next Days",
-      season: "This season...",
+      season: "This season",
       species: "Species",
       noForecastData: "No forecast data available",
       predictedTotal: "Predicted Total",
@@ -71,6 +72,19 @@ const messages = {
       birds: "birds",
       futureDays: "Future Days (hourly sequence)",
       hourlyForecastCount: "Hourly forecast count",
+      pastYears: "Past years (median, 20–80%)",
+    },
+    footer: {
+      partners: "Partners",
+      count: "The count",
+      countTrektellen: "Daily counts on Trektellen",
+      references: "References",
+      annualReports: "Annual reports of the count (in French)",
+      datasetRepo: "Count dataset",
+      code: "Source code",
+      modelRepo: "Forecast model",
+      exploreRepo: "Count analyses",
+      siteRepo: "This website",
     },
     settings: {
       title: "Settings",
@@ -78,9 +92,11 @@ const messages = {
       today: "Today",
       nextDays: "Next Days",
       season: "Season",
-      threshold: "Historical median count threshold",
+      threshold: "Hide species rarely seen on this date",
+      thresholdAbove: "Median total above",
+      birds: "birds",
       thresholdHelp:
-        "Only species with a higher historical median daily count for the day will be displayed",
+        "The median is the usual daily total on this date in past years. Applies to both lists.",
       nextDaysCount: "Number of next days to display",
       nextDaysHelp: 'Number of days after today to show in the "Next Days" forecast',
       sortBy: "Sort species by",
@@ -128,6 +144,9 @@ const messages = {
   fr: {
     nav: {
       title: "Prévisions d'Oiseaux du Défilé",
+      subtitle: "Comptage de la migration des rapaces",
+      pages: "Pages",
+      countOnTrektellen: "Comptage sur Trektellen",
       settings: "Paramètres",
     },
     intro: {
@@ -151,15 +170,13 @@ const messages = {
       modeQuantile: "Quantile",
       distribution: "Distribution historique",
       explanation: {
-        title: "Explication des colonnes du tableau",
-        species: "Nom de l'espèce d'oiseau",
-        observed: "Total observé jusqu'à présent pour l'espèce (données en direct si disponibles)",
-        predicted: "Nombre total prédit d'individus attendus pour l'espèce (de 6h à 19h)",
-        quantile:
-          "Comment la prédiction de l'espèce se compare aux années passées (ex: 90e signifie plus élevé que 90% des années précédentes pour cette date)",
+        title: "Comment lire ce graphique",
+        predicted: "Cercle bleu : le total du jour prévu par le modèle.",
+        counted: "Cercle rouille : le comptage saisi sur Trektellen pour la journée jusqu'ici.",
         distribution:
-          "Position des totaux prédit et compté parmi les années passées à cette date : bande claire 5–95 %, bande foncée 20–80 %, trait = médiane. Les nombres sont en échelle logarithmique ; Quantile montre directement le percentile.",
-        historicalMedian: "Comptage typique (médian) pour cette date dans les années passées",
+          "Bandes grises : les totaux comptés à cette date les années passées. Bande claire 5–95 %, bande foncée 20–80 %, trait noir la médiane.",
+        mode: "Nombres place les totaux sur une échelle logarithmique ; Quantile les place selon leur percentile parmi les années passées.",
+        values: "Survolez ou touchez un cercle ou la médiane pour voir sa valeur.",
       },
     },
     plots: {
@@ -168,7 +185,7 @@ const messages = {
       collapseAll: "Tout Réduire",
       today: "Aujourd'hui",
       nextDays: "Prochains Jours",
-      season: "Cette saison...",
+      season: "Cette saison",
       species: "Espèces",
       noForecastData: "Aucune donnée de prévision disponible",
       predictedTotal: "Total Prédit",
@@ -185,6 +202,19 @@ const messages = {
       birds: "oiseaux",
       futureDays: "Jours futurs (séquence horaire)",
       hourlyForecastCount: "Comptage prévisionnel horaire",
+      pastYears: "Années passées (médiane, 20–80 %)",
+    },
+    footer: {
+      partners: "Partenaires",
+      count: "Le comptage",
+      countTrektellen: "Comptages journaliers sur Trektellen",
+      references: "Références",
+      annualReports: "Synthèses annuelles du suivi",
+      datasetRepo: "Données du comptage",
+      code: "Code source",
+      modelRepo: "Modèle de prévision",
+      exploreRepo: "Analyses des comptages",
+      siteRepo: "Ce site",
     },
     settings: {
       title: "Paramètres",
@@ -192,9 +222,11 @@ const messages = {
       today: "Aujourd'hui",
       nextDays: "Prochains Jours",
       season: "Saison",
-      threshold: "Seuil de comptage médian historique",
+      threshold: "Masquer les espèces rares à cette date",
+      thresholdAbove: "Total médian supérieur à",
+      birds: "oiseaux",
       thresholdHelp:
-        "Seules les espèces avec un comptage quotidien médian historique plus élevé pour le jour seront affichées",
+        "La médiane est le total journalier habituel à cette date les années passées. S'applique aux deux listes.",
       nextDaysCount: "Nombre de prochains jours à afficher",
       nextDaysHelp:
         'Nombre de jours après aujourd\'hui à montrer dans la prévision "Prochains Jours"',
@@ -243,6 +275,9 @@ const messages = {
   de: {
     nav: {
       title: "Defile Vogelprognosen",
+      subtitle: "Zählung des Greifvogelzugs",
+      pages: "Seiten",
+      countOnTrektellen: "Zählung auf Trektellen",
       settings: "Einstellungen",
     },
     intro: {
@@ -267,15 +302,14 @@ const messages = {
       modeQuantile: "Quantil",
       distribution: "Historische Verteilung",
       explanation: {
-        title: "Tabellenspalten erklärt",
-        species: "Vogelartname",
-        observed: "Bisher beobachtete Gesamtzahl der Art (Live-Daten falls verfügbar)",
-        predicted: "Vorhergesagte Gesamtzahl der erwarteten Individuen der Art (von 6 bis 19 Uhr)",
-        quantile:
-          "Wie sich die Vorhersage der Art im Vergleich zu vergangenen Jahren verhält (z.B. 90. bedeutet höher als 90% der Vorjahre für dieses Datum)",
+        title: "So liest man diese Grafik",
+        predicted: "Blauer Kreis: die vom Modell vorhergesagte Tagessumme.",
+        counted: "Rostroter Kreis: die bisher auf Trektellen eingetragene Tageszählung.",
         distribution:
-          "Wo die vorhergesagte und die gezählte Summe im Vergleich zu früheren Jahren an diesem Datum liegen: helles Band 5–95 %, dunkles Band 20–80 %, Strich = Median. Zahlen auf logarithmischer Skala; Quantil zeigt direkt das Perzentil.",
-        historicalMedian: "Typische (mediane) Zählung für dieses Datum in vergangenen Jahren",
+          "Graue Bänder: die an diesem Datum in früheren Jahren gezählten Summen. Helles Band 5–95 %, dunkles Band 20–80 %, schwarzer Strich der Median.",
+        mode: "Zahlen zeigt die Summen auf einer logarithmischen Skala; Quantil zeigt ihr Perzentil unter den früheren Jahren.",
+        values:
+          "Fahren Sie über einen Kreis oder den Median oder tippen Sie darauf, um den Wert zu sehen.",
       },
     },
     plots: {
@@ -284,7 +318,7 @@ const messages = {
       collapseAll: "Alle Einklappen",
       today: "Heute",
       nextDays: "Nächste Tage",
-      season: "Diese Saison...",
+      season: "Diese Saison",
       species: "Arten",
       noForecastData: "Keine Prognosedaten verfügbar",
       predictedTotal: "Vorhergesagt Gesamt",
@@ -301,6 +335,19 @@ const messages = {
       birds: "Vögel",
       futureDays: "Zukünftige Tage (stündliche Abfolge)",
       hourlyForecastCount: "Stündliche Vorhersagezahl",
+      pastYears: "Vorjahre (Median, 20–80 %)",
+    },
+    footer: {
+      partners: "Partner",
+      count: "Die Zählung",
+      countTrektellen: "Tageszählungen auf Trektellen",
+      references: "Literatur",
+      annualReports: "Jahresberichte der Zählung (auf Französisch)",
+      datasetRepo: "Zähldaten",
+      code: "Quellcode",
+      modelRepo: "Prognosemodell",
+      exploreRepo: "Auswertungen der Zählungen",
+      siteRepo: "Diese Website",
     },
     settings: {
       title: "Einstellungen",
@@ -308,9 +355,11 @@ const messages = {
       today: "Heute",
       nextDays: "Nächste Tage",
       season: "Saison",
-      threshold: "Historischer Median-Zählschwellwert",
+      threshold: "An diesem Datum seltene Arten ausblenden",
+      thresholdAbove: "Median-Tagessumme über",
+      birds: "Vögel",
       thresholdHelp:
-        "Nur Arten mit einer höheren historischen medianen Tageszählung für den Tag werden angezeigt",
+        "Der Median ist die übliche Tagessumme an diesem Datum in früheren Jahren. Gilt für beide Listen.",
       nextDaysCount: "Anzahl der nächsten anzuzeigenden Tage",
       nextDaysHelp:
         'Anzahl der Tage nach heute, die in der "Nächste Tage"-Prognose angezeigt werden sollen',

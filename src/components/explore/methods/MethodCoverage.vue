@@ -159,8 +159,8 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../../utils/usePlot";
+import { usePlot, plotReact } from "../../../utils/usePlot";
+import { COLORS, alpha } from "../../../theme.js";
 import { doyLabel, doyDate, solarShift, clock } from "../../../services/explore";
 import Tex from "../Tex.vue";
 
@@ -241,7 +241,7 @@ function plotCoverage() {
   const inside = x.map((t) => t > hFrom.value && t < hTo.value);
   const [a, b] = covAxis.value;
   const ticks = Array.from({ length: b - a + 1 }, (_, i) => a + i).filter((h) => h % 2 === 0);
-  Plotly.react(
+  plotReact(
     covDiv.value,
     [
       {
@@ -249,8 +249,8 @@ function plotCoverage() {
         y: r.p,
         mode: "lines",
         fill: "tozeroy",
-        line: { color: "rgba(120, 120, 120, 0.9)", width: 1.5 },
-        fillcolor: "rgba(150, 150, 150, 0.35)",
+        line: { color: alpha(COLORS.faint, 0.9), width: 1.5 },
+        fillcolor: alpha(COLORS.historyInner, 0.35),
         text: x.map((t) => clock(t, 5)),
         hovertemplate: "%{text}: %{y:.1%} of the day per hour<extra></extra>",
       },
@@ -259,8 +259,8 @@ function plotCoverage() {
         y: r.p.map((p, k) => (inside[k] ? p : null)),
         mode: "lines",
         fill: "tozeroy",
-        line: { color: "#1f77b4", width: 2 },
-        fillcolor: "rgba(31, 119, 180, 0.55)",
+        line: { color: COLORS.predicted, width: 2 },
+        fillcolor: alpha(COLORS.predicted, 0.55),
         hoverinfo: "skip",
       },
     ],
@@ -281,7 +281,6 @@ function plotCoverage() {
         tickformat: ".0%",
         fixedrange: true,
         rangemode: "tozero",
-        gridcolor: "rgba(0,0,0,0.08)",
       },
     },
     CONFIG,

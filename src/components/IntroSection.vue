@@ -1,58 +1,30 @@
 <template>
-  <div>
-    <div v-if="showIntro" class="alert alert-info alert-dismissible" role="alert">
-      <button
-        type="button"
-        class="btn-close"
-        :aria-label="$t('common.close')"
-        @click="closeIntro"
-      />
-      <span>
-        {{ $t("intro.description") }}
-        <a
-          href="https://github.com/AmedeeRoy/defile-migration-forecast"
-          target="_blank"
-          rel="noopener"
-          >{{ $t("intro.neuralNetwork") }}</a
-        >.<br />
-        {{ $t("intro.checkActualCount") }}
-        <a href="https://www.trektellen.org/count/view/2422/" target="_blank" rel="noopener"
-          >Trektellen</a
-        >
-        {{ $t("intro.readMore") }}
-        <a
-          href="https://auvergne-rhone-alpes.lpo.fr/projets/migration-post-nuptiale-au-defile-de-lecluse/"
-          target="_blank"
-          rel="noopener"
-          >LPO Auvergne-Rhône-Alpes</a
-        >.
-      </span>
-    </div>
-  </div>
+  <p class="page-lead">
+    {{ $t("intro.description") }}
+    <a
+      href="https://github.com/AmedeeRoy/defile-migration-forecast"
+      target="_blank"
+      rel="noopener"
+      >{{ $t("intro.neuralNetwork") }}</a
+    >. {{ $t("intro.checkActualCount") }}
+    <a href="https://www.trektellen.org/count/view/2422/" target="_blank" rel="noopener"
+      >Trektellen</a
+    >
+    {{ $t("intro.readMore") }}
+    <a
+      href="https://auvergne-rhone-alpes.lpo.fr/projets/migration-post-nuptiale-au-defile-de-lecluse/"
+      target="_blank"
+      rel="noopener"
+      >LPO Auvergne-Rhône-Alpes</a
+    >.
+  </p>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
-
-// Internal state for intro visibility with localStorage persistence
-const showIntro = ref(true);
-
-// Load saved state from localStorage
-onMounted(() => {
-  try {
-    showIntro.value = localStorage.getItem("defile-intro-dismissed") !== "true";
-  } catch {
-    // Storage blocked (private mode): always show the intro
-  }
-});
-
-// Function to handle closing intro and save state
-function closeIntro() {
-  showIntro.value = false;
-  try {
-    localStorage.setItem("defile-intro-dismissed", "true");
-  } catch {
-    // Storage blocked: the intro shows again next visit
-  }
+<style scoped>
+.page-lead {
+  color: var(--dv-muted);
+  font-size: 0.9rem;
+  max-width: 52rem;
+  margin-bottom: 1.25rem;
 }
-</script>
+</style>

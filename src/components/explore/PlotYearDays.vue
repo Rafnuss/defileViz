@@ -1,15 +1,14 @@
 <template>
   <div>
     <div ref="plotDiv" class="plot-container"></div>
-    <p class="small text-muted mb-2">{{ $t("explore.many.daysHelp") }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS, alpha } from "../../theme.js";
 
 const { t, locale } = useI18n();
 
@@ -21,10 +20,10 @@ const props = defineProps({
   totals: { type: String, default: "show" },
 });
 
-// As PlotAnnual: counted in grey, estimated in black (amber under a caveat)
-const C_COUNTED = "rgba(150, 150, 150, 0.55)";
-const C_TOTAL = "rgb(33, 37, 41)";
-const C_CAVEAT = "#b06d00";
+// As PlotAnnual: counted in rust, estimated in slate-blue (ochre under a caveat)
+const C_COUNTED = alpha(COLORS.counted, 0.35);
+const C_TOTAL = COLORS.predicted;
+const C_CAVEAT = COLORS.ochre;
 const PALE = 0.4; // a day nobody counted
 // A day counted at all: some coverage, or birds counted below the model's minimum coverage
 const isCounted = (d) => d.c > 0 || d.count > 0;
@@ -100,7 +99,7 @@ function draw() {
       part(false, t("explore.timing.estimated"), PALE),
     );
   }
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     traces,
     {
@@ -112,8 +111,6 @@ function draw() {
       hovermode: "closest",
       dragmode: false,
       autosize: true,
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
     },
     { displayModeBar: false, responsive: true },
   );

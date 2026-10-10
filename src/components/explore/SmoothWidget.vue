@@ -37,8 +37,8 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import Plotly from "plotly.js-basic-dist-min";
-import { usePlot } from "../../utils/usePlot";
+import { usePlot, plotReact } from "../../utils/usePlot";
+import { COLORS } from "../../theme.js";
 import Tex from "./Tex.vue";
 
 const props = defineProps({
@@ -48,8 +48,8 @@ const props = defineProps({
 });
 
 const LOG_LAMBDA = [-2, 6];
-const C_TREND = "rgb(31, 119, 180)";
-const C_POINT = "rgb(33, 37, 41)";
+const C_TREND = COLORS.predicted;
+const C_POINT = COLORS.ink;
 
 const logLambda = ref(1);
 const lambda = computed(() => 10 ** logLambda.value);
@@ -115,7 +115,7 @@ const visible = usePlot(plotDiv);
 function draw() {
   if (!visible.value || !plotDiv.value) return;
   const yr = years.value;
-  Plotly.react(
+  plotReact(
     plotDiv.value,
     [
       {
