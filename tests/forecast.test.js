@@ -43,7 +43,7 @@ describe("loadSpeciesData", () => {
 describe("parseHash", () => {
   it("routes #explore and #explore/<taxon> to the Explore page", () => {
     expect(parseHash("#explore")).toEqual({ page: "explore", taxon: null });
-    expect(parseHash("#explore/a%20b")).toEqual({ page: "explore", taxon: "a b" });
+    expect(parseHash("#explore/redkit1")).toEqual({ page: "explore", taxon: "redkit1" });
   });
   it("treats everything else as the forecast page", () => {
     expect(parseHash("")).toEqual({ page: "forecast", taxon: null });

@@ -16,7 +16,7 @@
           >{{ $t("nav.forecast") }}</a
         >
         <a
-          href="#explore"
+          :href="exploreTaxon ? `#explore/${exploreTaxon}` : '#explore'"
           :class="{ active: page === 'explore' }"
           :aria-current="page === 'explore' ? 'page' : null"
           >{{ $t("nav.explore") }}</a
@@ -48,7 +48,7 @@
 
   <main>
     <div v-if="page === 'explore'" class="container">
-      <ExplorePage :initial-taxon="exploreTaxon" @select="onExploreSelect" />
+      <ExplorePage :route-taxon="exploreTaxon" @select="onExploreSelect" />
     </div>
     <div v-else class="container">
       <!-- The day shown, its count on Trektellen and the display settings -->

@@ -61,8 +61,8 @@
                 ></a>
               </span>
             </td>
-            <td class="text-end tnum">{{ m.ownDays == null ? "–" : fmt(m.ownDays) }}</td>
-            <td class="text-end tnum">{{ fmt(m.ownBirds) }}</td>
+            <td class="text-end tnum">{{ m.own_days == null ? "–" : fmt(m.own_days) }}</td>
+            <td class="text-end tnum">{{ fmt(m.own_birds ?? 0) }}</td>
           </tr>
         </tbody>
       </table>
@@ -101,29 +101,9 @@ const parts = computed(() =>
     .sort(order),
 );
 
-// A taxon's `birds` include everything below it: its own birds are those less its direct members'
-// (those not below another of its members)
-function own(tx) {
-  const below = (tx.members ?? []).filter((id) => id !== tx.taxon_id);
-  const nested = new Set(
-    below.flatMap((id) => (byId.value.get(id)?.members ?? []).filter((j) => j !== id)),
-  );
-  const direct = below.filter((id) => !nested.has(id));
-  return Math.max(
-    0,
-    (tx.birds ?? 0) - direct.reduce((s, id) => s + (byId.value.get(id)?.birds ?? 0), 0),
-  );
-}
-// Every name in the table with what it adds, the most counted first. A newer taxa.json gives
-// `own_days`; without it a member with nothing below it has its own `days`
+// Every name in the table with its own records (before the sums), the most counted first
 const rows = computed(() =>
-  [...parts.value, props.taxon]
-    .map((tx) => ({
-      ...tx,
-      ownBirds: tx.own_birds ?? own(tx),
-      ownDays: tx.own_days ?? (tx.members ? null : tx.days),
-    }))
-    .sort((a, b) => b.ownBirds - a.ownBirds),
+  [...parts.value, props.taxon].sort((a, b) => (b.own_birds ?? 0) - (a.own_birds ?? 0)),
 );
 // The line: the members, then the group itself ("… and curlew sp.")
 const inline = computed(() => {

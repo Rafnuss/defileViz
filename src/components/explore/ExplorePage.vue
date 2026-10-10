@@ -6,8 +6,8 @@
     <div class="card species-box mb-3">
       <div class="card-body">
         <div class="picker-wrap mx-auto">
-          <SpeciesPicker v-model="taxonId" :taxa="options" />
-          <TaxonMembers v-if="taxon" :taxon="taxon" :taxa="taxa" @select="(id) => (taxonId = id)" />
+          <SpeciesPicker :model-value="taxonId" :taxa="options" @update:model-value="pick" />
+          <TaxonMembers v-if="taxon" :taxon="taxon" :taxa="taxa" @select="pick" />
           <div v-if="data" class="links d-flex flex-wrap justify-content-center gap-1 mt-2">
             <a
               v-for="(url, k) in links"
@@ -323,8 +323,8 @@ import FigureHead from "./FigureHead.vue";
 const { t, locale } = useI18n();
 
 const props = defineProps({
-  // taxon_id from the URL (#explore/<taxon_id>), if any
-  initialTaxon: { type: String, default: null },
+  // The taxon in the URL (#explore/<ebird_code>), if any
+  routeTaxon: { type: String, default: null },
 });
 const emit = defineEmits(["select"]);
 
@@ -332,7 +332,7 @@ const DEFAULT_TAXON = "Red Kite";
 const RECORDS = 10;
 
 const taxa = ref([]);
-const taxonId = ref(props.initialTaxon);
+const taxonId = ref(null);
 const data = ref(null);
 const effort = ref(null);
 const loadError = ref(null);
@@ -341,7 +341,8 @@ const openMethod = (topic, section) => method.value?.open(topic, section);
 
 // Full-tier taxa: those counted on enough days for a page
 const options = computed(() => taxa.value.filter((tx) => tx.tier === "full"));
-const taxon = computed(() => taxa.value.find((tx) => tx.taxon_id === taxonId.value));
+const byId = computed(() => new Map(taxa.value.map((tx) => [tx.taxon_id, tx])));
+const taxon = computed(() => byId.value.get(taxonId.value));
 // The taxon's external pages; a group's Trektellen graph is of one of its ids only, so not shown
 const links = computed(() => {
   const all = data.value?.links ?? {};
@@ -559,22 +560,28 @@ const records = computed(() => data.value.records.top_days.slice(0, RECORDS));
 onMounted(async () => {
   try {
     taxa.value = await fetchTaxa();
-    if (!taxon.value) {
-      taxonId.value = (
-        options.value.find((tx) => tx.english_name === DEFAULT_TAXON) ?? options.value[0]
-      )?.taxon_id;
-    }
     effort.value = await fetchEffort();
   } catch (e) {
     loadError.value = String(e);
   }
 });
 
+// The taxon the URL names (its eBird code), Red Kite if it has no page; the URL is then put right
+watch([() => props.routeTaxon, options], ([code]) => {
+  if (!options.value.length) return;
+  const tx =
+    options.value.find((o) => o.ebird_code === code) ??
+    options.value.find((o) => o.english_name === DEFAULT_TAXON);
+  taxonId.value = tx.taxon_id;
+  if (tx.ebird_code !== code) emit("select", tx.ebird_code, true);
+});
+// A taxon picked here (the picker, the names it adds up)
+const pick = (id) => emit("select", byId.value.get(id).ebird_code);
+
 watch(
   taxonId,
   async (id) => {
     if (!id) return;
-    emit("select", id);
     data.value = null;
     loadError.value = null;
     try {
