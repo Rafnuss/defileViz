@@ -59,6 +59,9 @@
   .t-episode {
     color: var(--dv-ochre);
   }
+  .t-weather {
+    color: var(--dv-teal);
+  }
   .terms {
     width: 100%;
     margin-bottom: 1rem;
@@ -72,6 +75,13 @@
   .terms th {
     font-weight: 600;
     white-space: nowrap;
+  }
+  .terms th.terms-group {
+    padding-top: 0.7rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
   }
   .terms-sym {
     width: 4.5rem;

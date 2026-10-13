@@ -33,10 +33,10 @@
         </div>
       </div>
       <p class="small text-muted">
-        Medians over the 73 species tested (2025 counts). The intervals are about right, slightly
-        too narrow for some: the estimates fall a little short of the truth on average (−4%), most
+        Medians over the 91 species tested (2025 counts). The intervals are about right, slightly
+        too narrow for some: the estimates fall a little short of the truth on average (−3%), most
         for species passing in a few big flocks (Purple Heron, curlews, Whimbrel, Mediterranean
-        Gull), whose missed days hold the birds nobody saw.
+        Gull, Lapwing), whose missed days hold the birds nobody saw.
       </p>
 
       <figure v-if="gap" class="figure w-100">
@@ -93,6 +93,20 @@
           </tbody>
         </table>
       </div>
+      <h6 id="m-weather-classes" class="mt-4">Weather effects</h6>
+      <p>
+        Each effect of the weather panel is judged on its own, by the same kind of rule. It is
+        <strong>shown</strong> when its 95% interval excludes no effect, it is at least 10%, and it
+        goes the same way when the model is fitted again on the odd years alone and on the even
+        years alone, two halves that share no season. It is <strong>read with care</strong> (gold)
+        when one half points the other way, and <strong>not shown</strong> otherwise, or when fewer
+        than 20 counted days had that weather. A side of the wind rose is judged the same way; the
+        wind is read with care when the two halves' best directions are more than 60° apart.
+        <template v-if="weatherCounts"
+          >For {{ name }}: {{ weatherCounts.show }} shown, {{ weatherCounts.caveat }} read with
+          care, {{ weatherCounts.hide }} not shown; wind: {{ LABEL[data.weather.wind.class] }}.
+        </template>
+      </p>
       <p v-if="q?.estimated_years?.length" class="small">
         Seasons less than half counted are ringed on the page as mostly estimated:
         {{ q.estimated_years.join(", ") }}.
@@ -115,7 +129,7 @@ defineEmits(["method"]);
 
 // defile-explore DECISIONS.md -> Pipeline (benchmark@1) and reliability.py: update them there first
 const STATS = [
-  { v: "10%", l: "typical error on a season total (6–16% between quartiles)" },
+  { v: "9%", l: "typical error on a season total (5–15% between quartiles)" },
   { v: "17%", l: "the same, dividing each count by its coverage" },
   { v: "83%", l: "of 80% intervals hold the truth" },
   { v: "100%", l: "of 95% intervals hold the truth" },
@@ -141,6 +155,14 @@ const BADGE = { show: "text-bg-success", caveat: "text-bg-warning", hide: "text-
 const LABEL = { show: "shown", caveat: "read with care", hide: "not shown" };
 
 const q = computed(() => props.data.reliability);
+// the weather block's effects by class (defile-explore `reliability.weather_class`)
+const weatherCounts = computed(() => {
+  const effects = props.data.weather?.effects;
+  if (!effects) return null;
+  const n = { show: 0, caveat: 0, hide: 0 };
+  effects.forEach((e) => (n[e.class] += 1));
+  return n;
+});
 const gap = computed(() => props.data.benchmark?.gap ?? null);
 const pct = (x) => `${Math.round(x * 100)}%`;
 

@@ -185,6 +185,48 @@
         </div>
       </section>
 
+      <!-- 3b. The weather -->
+      <section v-if="weatherShown" class="mb-4">
+        <h4 class="section-title">{{ $t("explore.weather.title") }}</h4>
+        <div class="row g-3">
+          <div class="col-lg-7">
+            <div class="card h-100">
+              <div class="card-body">
+                <FigureHead
+                  :title="$t('explore.weather.effects')"
+                  :result="weatherResult"
+                  :caption="weatherEffects.length ? $t('explore.weather.effectsHelp') : null"
+                  @info="openMethod('shown', 'm-weather-read')"
+                />
+                <PlotWeatherEffects v-if="weatherEffects.length" :effects="weatherEffects" />
+                <p v-if="weatherCaveat" class="small text-muted mb-1">
+                  {{ $t("explore.weather.caveatNote") }}
+                </p>
+                <p v-if="weatherUnclear" class="small text-muted mb-0">{{ weatherUnclear }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="card h-100">
+              <div class="card-body">
+                <FigureHead
+                  :title="$t('explore.weather.wind')"
+                  :result="windResult"
+                  :caption="
+                    windShown
+                      ? $t('explore.weather.windHelp', { speed: data.weather.wind.speed })
+                      : null
+                  "
+                  @info="openMethod('shown', 'm-weather-read')"
+                />
+                <PlotWind v-if="windShown" :wind="data.weather.wind" />
+                <p v-else class="small text-muted mb-0">{{ $t("explore.weather.noWind") }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 4. Who passes -->
       <section v-if="data.age || data.sex" class="mb-4">
         <h4 class="section-title">{{ $t("explore.who.title") }}</h4>
@@ -313,6 +355,8 @@ import PlotDaytime from "./PlotDaytime.vue";
 import PlotPhenology from "./PlotPhenology.vue";
 import PlotShare from "./PlotShare.vue";
 import PlotYearDays from "./PlotYearDays.vue";
+import PlotWeatherEffects from "./PlotWeatherEffects.vue";
+import PlotWind from "./PlotWind.vue";
 import ClaimNote from "./ClaimNote.vue";
 import MethodFlow from "./MethodFlow.vue";
 import MethodModal from "./methods/MethodModal.vue";
@@ -350,6 +394,34 @@ const links = computed(() => {
 });
 const group = computed(() => taxon.value && isGroup(taxon.value));
 const trend = computed(() => data.value?.trend ?? null);
+// The weather block (defile-explore `weather.weather_block`): its effects and wind classed there
+const weather = computed(() => data.value?.weather ?? null);
+const weatherEffects = computed(
+  () => weather.value?.effects.filter((e) => e.class !== "hide") ?? [],
+);
+const windShown = computed(() => !!weather.value && weather.value.wind.class !== "hide");
+const weatherShown = computed(() => weatherEffects.value.length > 0 || windShown.value);
+const weatherCaveat = computed(() => weatherEffects.value.some((e) => e.class === "caveat"));
+const weatherNumber = (x) => x.toLocaleString(locale.value, { maximumSignificantDigits: 2 });
+// The strongest effect shown, as the figure's result
+const weatherResult = computed(() => {
+  const e = [...weatherEffects.value].sort(
+    (a, b) => Math.abs(Math.log(b.effect)) - Math.abs(Math.log(a.effect)),
+  )[0];
+  return e ? `${t(`explore.weather.terms.${e.term}`)} ×${weatherNumber(e.effect)}` : null;
+});
+const weatherUnclear = computed(() => {
+  const hidden = weather.value?.effects.filter((e) => e.class === "hide") ?? [];
+  if (!hidden.length) return null;
+  const list = hidden.map((e) => t(`explore.weather.terms.${e.term}`).toLowerCase()).join(", ");
+  return t("explore.weather.unclear", { list });
+});
+const windResult = computed(() => {
+  if (!windShown.value) return null;
+  const rose = weather.value.wind.rose;
+  const side = rose[Math.round(weather.value.wind.origin / 45) % 8].from;
+  return t("explore.weather.windBest", { side: t(`explore.weather.sides.${side}`) });
+});
 // The season block from the trend's gap-filled days (defile-explore `season.source`), else counts
 const seasonFilled = computed(() => data.value?.season?.source === "gam");
 const startYear = computed(() => data.value.settings.start_year.value);

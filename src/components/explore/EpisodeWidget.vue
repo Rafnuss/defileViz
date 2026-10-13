@@ -1,24 +1,22 @@
 <template>
   <figure class="figure w-100 widget">
     <div class="d-flex justify-content-between align-items-center small mb-2 gap-2">
-      <label class="form-label mb-0" for="episode-year"
-        >One season, with and without episodes</label
-      >
+      <label class="form-label mb-0" for="episode-year">One season, day by day</label>
       <select id="episode-year" v-model.number="year" class="form-select form-select-sm w-auto">
         <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
       </select>
     </div>
     <div ref="plotDiv" class="plot"></div>
     <figcaption class="figure-caption">
-      <strong>Figure 2.</strong> {{ name }} in {{ year }}. Top: the birds counted each day, divided
+      <strong>Figure 2.</strong> {{ name }} in {{ year }}. Top: the birds counted each day divided
       by the day's coverage (points; days less than {{ MIN_COVERAGE * 100 }}% counted are left out),
-      the season expected without episodes (dashed: trend, year level, season and change of timing)
-      and with them (orange). Bottom: the episodes alone, <Tex e="\exp(\Ep_y(t))" />, the factor by
-      which they multiply the expected birds. Over all {{ years.length }} years, the leftover of one
-      day predicts the next: without the episodes, the correlation between the residuals of
-      consecutive days is <strong>{{ fmt(acf.without) }}</strong
-      >; with them it falls to <strong>{{ fmt(acf.with) }}</strong
-      >. This is what <Tex e="\Ep" /> is for: a good day tends to be followed by another.
+      against the smooth season (dashed: trend, year level, season and change of timing), the same
+      with the day's weather (teal) and with the episodes too (orange, the full model). Bottom: what
+      each multiplies the smooth season by. Over all {{ years.length }} years, how far one day's
+      count is from the model still predicts the next day's: the correlation is
+      <strong>{{ fmt(acf.base) }}</strong> with the smooth season alone,
+      <strong>{{ fmt(acf.weather) }}</strong> with the weather and
+      <strong>{{ fmt(acf.full) }}</strong> with the episodes too.
     </figcaption>
   </figure>
 </template>
@@ -28,11 +26,11 @@ import { ref, computed, watch } from "vue";
 import { usePlot, plotReact } from "../../utils/usePlot";
 import { COLORS, alpha } from "../../theme.js";
 import { doyLabel } from "../../services/explore";
-import Tex from "./Tex.vue";
 
 const props = defineProps({
   name: { type: String, required: true },
-  // trend.episodes: {doy: [...], base: {year: [...]}, episode: {year: [...]}}
+  // trend.episodes: {doy, base: {year: [...]}, weather: {year: [...]}, episode: {year: [...]}},
+  // weather and episode as log multipliers of base (defile-explore `trend.episode_curves`)
   episodes: { type: Object, required: true },
   theta: { type: Number, required: true },
   // the species' days, columnar: {date: [...], count: [...], c: [...]}
@@ -42,6 +40,7 @@ const props = defineProps({
 // As defile-explore src/defile_explore/trend.py MIN_COVERAGE: days counted less are not fitted
 const MIN_COVERAGE = 0.1;
 const C_EPISODE = COLORS.ochre;
+const C_WEATHER = COLORS.teal;
 const C_BASE = alpha(COLORS.ink, 0.6);
 const C_POINT = alpha(COLORS.ink, 0.45);
 const DATE_TICKS = [213, 244, 274, 305];
@@ -51,6 +50,11 @@ const years = computed(() => Object.keys(props.episodes.base).map(Number));
 const year = ref(years.value.at(-1));
 watch(years, (ys) => !ys.includes(year.value) && (year.value = ys.at(-1)));
 
+// a year's log multipliers (an export from before the weather has none: zeros)
+const logs = (y) => {
+  const ep = props.episodes.episode[y];
+  return { wx: props.episodes.weather?.[y] ?? ep.map(() => 0), ep };
+};
 const fmt = (r) => (Number.isFinite(r) ? r.toFixed(2) : "–");
 
 // Day of year, leap years included as in the export (pandas' dayofyear)
@@ -75,24 +79,26 @@ const counted = computed(() => {
 
 /**
  * Lag-1 correlation of the Pearson residuals, (N - mu) / sd with the negative binomial's sd, over
- * pairs of consecutive counted days of the same year: with mu from eq. (2) with or without E.
+ * pairs of consecutive counted days of the same year, with mu from eq. (3): the smooth season
+ * alone (`base`), with the weather (`weather`), and with the episodes too (`full`).
  */
 const acf = computed(() => {
   const th = props.theta;
-  const pairs = { with: [], without: [] };
+  const LEVELS = ["base", "weather", "full"];
+  const pairs = { base: [], weather: [], full: [] };
   for (const [y, m] of Object.entries(counted.value)) {
     const base = props.episodes.base[y];
-    const ep = props.episodes.episode[y];
+    const { wx, ep } = logs(y);
     const d0 = props.episodes.doy[0];
-    const resid = (t, withE) => {
+    const resid = (t, level) => {
       const { n, c } = m.get(t);
-      const mu = c * base[t - d0] * (withE ? Math.exp(ep[t - d0]) : 1);
+      const i = t - d0;
+      const log = (level !== "base" ? wx[i] : 0) + (level === "full" ? ep[i] : 0);
+      const mu = c * base[i] * Math.exp(log);
       return (n - mu) / Math.sqrt(mu + (mu * mu) / th);
     };
     for (const t of m.keys())
-      if (m.has(t + 1))
-        for (const k of ["with", "without"])
-          pairs[k].push([resid(t, k === "with"), resid(t + 1, k === "with")]);
+      if (m.has(t + 1)) for (const k of LEVELS) pairs[k].push([resid(t, k), resid(t + 1, k)]);
   }
   const corr = (p) => {
     const n = p.length;
@@ -109,7 +115,7 @@ const acf = computed(() => {
     }
     return sxy / Math.sqrt(sxx * syy);
   };
-  return { with: corr(pairs.with), without: corr(pairs.without) };
+  return Object.fromEntries(LEVELS.map((k) => [k, corr(pairs[k])]));
 });
 
 const plotDiv = ref(null);
@@ -120,7 +126,9 @@ function draw() {
   const y = String(year.value);
   const { doy } = props.episodes;
   const base = props.episodes.base[y];
-  const factor = props.episodes.episode[y].map(Math.exp);
+  const { wx, ep } = logs(y);
+  const fWx = wx.map(Math.exp);
+  const fEp = ep.map(Math.exp);
   const pts = [...(counted.value[y] ?? new Map()).entries()];
   const xaxis = {
     fixedrange: true,
@@ -146,26 +154,44 @@ function draw() {
         y: base,
         mode: "lines",
         line: { color: C_BASE, width: 1.5, dash: "dash" },
-        name: "without episodes",
+        name: "smooth season",
         hoverinfo: "skip",
       },
       {
         x: doy,
-        y: base.map((b, i) => b * factor[i]),
+        y: base.map((b, i) => b * fWx[i]),
+        mode: "lines",
+        line: { color: C_WEATHER, width: 1.5 },
+        name: "with the weather",
+        hovertemplate: "%{y:,.0f} with the weather<extra></extra>",
+      },
+      {
+        x: doy,
+        y: base.map((b, i) => b * fWx[i] * fEp[i]),
         mode: "lines",
         line: { color: C_EPISODE, width: 2 },
-        name: "with episodes",
+        name: "and the episodes",
         hovertemplate: "%{y:,.0f} expected<extra></extra>",
       },
       {
         x: doy,
-        y: factor,
+        y: fWx,
+        mode: "lines",
+        line: { color: C_WEATHER, width: 1.5 },
+        xaxis: "x2",
+        yaxis: "y2",
+        showlegend: false,
+        hovertemplate: "weather ×%{y:.2f}<extra></extra>",
+      },
+      {
+        x: doy,
+        y: fEp,
         mode: "lines",
         line: { color: C_EPISODE, width: 1.5 },
         xaxis: "x2",
         yaxis: "y2",
         showlegend: false,
-        hovertemplate: "×%{y:.2f}<extra></extra>",
+        hovertemplate: "episodes ×%{y:.2f}<extra></extra>",
       },
     ],
     {
@@ -176,19 +202,19 @@ function draw() {
       legend: { orientation: "h", x: 1, xanchor: "right", y: 1.12 },
       xaxis: { ...xaxis, matches: "x2", showticklabels: false, anchor: "y" },
       yaxis: {
-        domain: [0.36, 1],
+        domain: [0.4, 1],
         fixedrange: true,
         rangemode: "tozero",
         title: { text: "birds per full day" },
       },
       xaxis2: { ...xaxis, anchor: "y2" },
       yaxis2: {
-        domain: [0, 0.28],
+        domain: [0, 0.32],
         type: "log",
         fixedrange: true,
         tickvals: FACTOR_TICKS,
         ticktext: FACTOR_TICKS.map((v) => `×${v}`),
-        title: { text: "episodes" },
+        title: { text: "×" },
       },
       shapes: [
         {
@@ -217,6 +243,6 @@ watch(() => [visible.value, year.value, props.episodes, counted.value], draw);
   padding: 0.75rem 1rem;
 }
 .plot {
-  min-height: 340px;
+  min-height: 380px;
 }
 </style>

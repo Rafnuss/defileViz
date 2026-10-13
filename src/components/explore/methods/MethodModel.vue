@@ -5,14 +5,19 @@
       <ul class="mb-0">
         <li>
           A statistical model (a <em>generalised additive model</em>, GAM) describes the birds
-          expected on each day of each season, from the counts and their coverage.
+          expected on each day of each season, from the counts, their coverage and the day's
+          weather.
         </li>
         <li>
-          It fills in the hours and days nobody counted, with an honest uncertainty, and separates
-          the long-term trend from good and bad years and from the weather.
+          It fills in the hours and days nobody counted, with an honest uncertainty: a day lost to
+          rain is filled as a rainy day, not as an average one.
         </li>
         <li>
-          Only species counted on enough days get a model (about seventy); the page always shows
+          It separates the long-term trend from good and bad years, from the timing of the season
+          and from the weather of the day.
+        </li>
+        <li>
+          Only species counted on enough days get a model (about ninety); the page always shows
           their counts too.
         </li>
       </ul>
@@ -26,19 +31,24 @@
           @click.prevent="$emit('method', 'counts', 'm-window')"
           >{{ windowText }}</a
         >) in year <Tex e="y" />, with <Tex e="t" /> the day of the year, the model gives the number
-        of birds <em>expected</em> in the hours counted, <Tex e="c_d" /> being the day's coverage,
-        eq. (1):
+        of birds <em>expected</em> in the hours counted, <Tex e="c_d" /> being the day's coverage
+        (<a href="#" @click.prevent="$emit('method', 'coverage', 'm-profile')"
+          >Time of day and coverage</a
+        >), eq. (3):
       </p>
       <div class="eq">
         <Tex
           display
-          e="\mu_d = c_d \times \exp\left(\alpha + \Tr(y) + \Yr_y + \Se(t) + \Sh(y,t) + \Ep_y(t)\right) \tag{3}"
+          e="\mu_d = c_d \times \exp\left(\alpha + \Tr(y) + \Yr_y + \Se(t) + \Sh(y,t) + \Wx_d + \Ep_y(t)\right) \tag{3}"
         />
       </div>
-      <p>Inside the exponential, each term has one job:</p>
+      <p>Inside the exponential, each term has one job, on one time scale:</p>
       <table class="terms">
-        <tbody>
-          <tr v-for="term in TERMS" :key="term.name">
+        <tbody v-for="g in GROUPS" :key="g.name">
+          <tr>
+            <th colspan="3" class="terms-group">{{ g.name }}</th>
+          </tr>
+          <tr v-for="term in g.terms" :key="term.name">
             <td class="terms-sym"><Tex :e="term.tex" /></td>
             <th scope="row" :class="term.cls">{{ term.name }}</th>
             <td>{{ term.text }}</td>
@@ -77,23 +87,50 @@
           timing is compared, not the numbers.
         </figcaption>
       </figure>
+    </section>
 
-      <template v-if="trend.episodes && data.days">
-        <p>
-          The episodes are the least visible term, so Figure 2 shows them for one season. A spell of
-          good weather brings several good days in a row, a week of rain several bad ones. The model
-          cannot see the weather, but it can see that neighbouring days look alike, and
-          <Tex e="\Ep_y(t)" /> lets the expectation follow such runs.
-        </p>
-        <EpisodeWidget
-          :name="name"
-          :episodes="trend.episodes"
-          :theta="trend.theta"
-          :days="data.days"
-        />
-      </template>
+    <!-- 2. Day to day -->
+    <section id="m-days">
+      <h5><span class="sec-n">2</span>From day to day: weather and episodes</h5>
+      <p id="m-weather">
+        <strong class="t-weather">The weather</strong>,
+        <Tex e="\Wx_d = \sum_j \beta_j\, w_{j,d}" />. Each day at the Défilé is described by nine
+        numbers from ERA5, an hourly reconstruction of the weather on a grid of about 30 km: rain,
+        rain the day before, sunshine, how high the thermals rise (the depth of the mixed layer near
+        the ground), the wind's direction and strength at 100 m, the change of pressure over 24
+        hours (a front passing), and how warm the day is for the date. Each <Tex e="w_{j,d}" /> is
+        averaged over the hours the species flies, weighted by its time of day, and put on a common
+        scale. Every species has all nine, each with its own effect <Tex e="\beta_j" />, held near
+        zero unless its counts say otherwise. Figure 1 and the trend are at average weather.
+      </p>
+      <p>
+        <strong class="t-episode">The episodes</strong>, <Tex e="\Ep_y(t)" />: a short-range curve
+        of its own each year, for the runs of good or bad days the weather of the day does not
+        explain, such as a wave of birds arriving from further north. Neighbouring days look alike,
+        so a day nobody counted leans on the days around it.
+      </p>
+      <EpisodeWidget
+        v-if="trend.episodes && data.days"
+        :name="name"
+        :episodes="trend.episodes"
+        :theta="trend.theta"
+        :days="data.days"
+      />
+      <p>
+        The page's weather panel shows the clearest of each species' effects (how to read it:
+        <a href="#" @click.prevent="$emit('method', 'shown', 'm-weather-read')"
+          >What the page shows</a
+        >; when an effect is shown:
+        <a href="#" @click.prevent="$emit('method', 'reliability', 'm-weather-classes')"
+          >How reliable?</a
+        >). They are associations, not causes: a count is birds passing <em>and</em> birds seen, and
+        a headwind brings birds lower while strong thermals can lift them out of sight.
+      </p>
+    </section>
 
-      <h6 class="mt-4">Counts scatter around the expectation</h6>
+    <!-- 3. Counts scatter -->
+    <section id="m-scatter">
+      <h5><span class="sec-n">3</span>Counts scatter around the expectation</h5>
       <p>
         The count on a day, <Tex e="N_d" />, is not exactly <Tex e="\mu_d" />. If each bird decided
         to fly independently of the others, counts would follow a
@@ -120,9 +157,9 @@
       <NegBinWidget :name="name" :species-theta="trend.theta" />
     </section>
 
-    <!-- 2. Smoothness -->
+    <!-- 4. Smoothness -->
     <section id="m-smooth">
-      <h5><span class="sec-n">2</span>How smooth is smooth?</h5>
+      <h5><span class="sec-n">4</span>How smooth is smooth?</h5>
       <p>
         Each curve (<Tex e="\Tr" />, <Tex e="\Se" />, <Tex e="\Sh" />, <Tex e="\Ep" />) is a
         <em>spline</em>: a chain of short polynomial pieces joined smoothly, flexible enough to
@@ -141,14 +178,16 @@
         which the observed counts are most probable overall, the <em>marginal likelihood</em>. This
         is the standard method of GAMs in ecology (Wood 2017). With 30 years of data, the trend can
         bend over a decade but not from one year to the next. The year levels <Tex e="\Yr" /> are
-        there for year-to-year jumps.
+        there for year-to-year jumps. The weather effects <Tex e="\beta_j" /> are straight lines,
+        with a fixed penalty of their own: without a clear signal in the counts, an effect stays
+        near zero.
       </p>
       <SmoothWidget :name="name" :annual="trend.annual" />
     </section>
 
-    <!-- 3. Filling the gaps -->
+    <!-- 5. Filling the gaps -->
     <section id="m-fill">
-      <h5><span class="sec-n">3</span>Filling the gaps</h5>
+      <h5><span class="sec-n">5</span>Filling the gaps</h5>
       <p>
         The <strong>estimated total</strong> of a season is the birds actually counted, plus an
         estimate of those that passed while nobody was counting:
@@ -179,7 +218,9 @@
           for {{ name }}), so a missed afternoon may hold a big flock or nothing.
         </li>
         <li>
-          <strong>Days with no count</strong> come from the model alone, eq. (3), including the
+          <strong>Each day is filled with its own weather.</strong> A day nobody counted because it
+          rained is filled as a rainy day, with few birds for most species, not as an average day.
+          Days with no count at all come from the model alone, eq. (3): their weather and the
           episode of good or bad days around them.
         </li>
       </ul>
@@ -214,22 +255,26 @@
         <a href="#" @click.prevent="$emit('method', 'coverage', 'm-rate')"
           >Time of day and coverage</a
         >, works on average but goes badly wrong on short counts, and leaves the days nobody counted
-        empty. Tested on 73 species (see
+        empty. Tested on 91 species (see
         <a href="#" @click.prevent="$emit('method', 'reliability', 'm-test')">How reliable?</a>), it
-        misses known season totals by 17% (median), the model by 10%. Days below
+        misses known season totals by 17% (median), the model by 9%. Days below
         <Tex e="c_d = 0.1" /> are not used to estimate rates at all; their birds are just added to
         the total.
       </div>
     </section>
 
     <p class="small text-muted mt-4 mb-0">
-      Reference: Wood, S.N. (2017).
-      <em>Generalized Additive Models: An Introduction with R</em>, 2nd ed. CRC Press. Code and the
-      full record of choices and tests:
+      Counts of migrating birds are commonly read this way: a regression of the daily counts with
+      the counting effort as an offset and the date and weather as covariates (for raptors, Farmer
+      et al. 2007). References: Farmer, C.J., Hussell, D.J.T. & Mizrahi, D. (2007). Detecting
+      population trends in migratory birds of prey. <em>The Auk</em> 124, 1047–1062. Wood, S.N.
+      (2017). <em>Generalized Additive Models: An Introduction with R</em>, 2nd ed. CRC Press. Code
+      and the full record of choices and tests:
       <a href="https://github.com/Rafnuss/defile-explore" target="_blank" rel="noopener"
         >defile-explore</a
       >
-      (<code>src/defile_explore/trend.py</code>, <code>DECISIONS.md</code>).
+      (<code>src/defile_explore/trend.py</code>, <code>weather.py</code>,
+      <code>DECISIONS.md</code>).
     </p>
   </div>
 </template>
@@ -255,43 +300,64 @@ const props = defineProps({
 });
 defineEmits(["method"]);
 
-// The terms of eq. (3), in the order of the equation
-const TERMS = [
+// The terms of eq. (3), in the order of the equation, by time scale
+const GROUPS = [
   {
-    tex: "\\alpha",
-    name: "level",
-    cls: "",
-    text: "The overall level: how common the species is at the Défilé.",
+    name: "Over the years",
+    terms: [
+      {
+        tex: "\\alpha",
+        name: "level",
+        cls: "",
+        text: "The overall level: how common the species is at the Défilé.",
+      },
+      {
+        tex: "\\Tr(y)",
+        name: "trend",
+        cls: "t-trend",
+        text: "A smooth curve over the years: the long-term rise or decline.",
+      },
+      {
+        tex: "\\Yr_y",
+        name: "year level",
+        cls: "t-year",
+        text: "One value per year: good and bad years around the trend (breeding success, a shifted route).",
+      },
+    ],
   },
   {
-    tex: "\\Tr(y)",
-    name: "trend",
-    cls: "t-trend",
-    text: "A smooth curve over the years: the long-term rise or decline.",
+    name: "Over the season",
+    terms: [
+      {
+        tex: "\\Se(t)",
+        name: "season",
+        cls: "t-season",
+        text: "The average shape of the season: when the species passes, and how spread out.",
+      },
+      {
+        tex: "\\Sh(y,t)",
+        name: "change of timing",
+        cls: "t-shift",
+        text: "A slow change of that shape over the decades, for example a season starting earlier or lasting longer.",
+      },
+    ],
   },
   {
-    tex: "\\Yr_y",
-    name: "year level",
-    cls: "t-year",
-    text: "One value per year: good and bad years around the trend (breeding success, weather over the whole season, a shifted route).",
-  },
-  {
-    tex: "\\Se(t)",
-    name: "season",
-    cls: "t-season",
-    text: "The average shape of the season: when the species passes, and how spread out.",
-  },
-  {
-    tex: "\\Sh(y,t)",
-    name: "change of timing",
-    cls: "t-shift",
-    text: "A slow change of that shape over the decades, for example a season starting earlier or lasting longer.",
-  },
-  {
-    tex: "\\Ep_y(t)",
-    name: "episodes",
-    cls: "t-episode",
-    text: "A short-range curve of its own each year: runs of a few good or bad migration days. This is the weather's share. The model does not use weather data. It only lets neighbouring days resemble each other.",
+    name: "From day to day",
+    terms: [
+      {
+        tex: "\\Wx_d",
+        name: "weather",
+        cls: "t-weather",
+        text: "The day's weather: rain, sunshine, thermals, wind, fronts and temperature (section 2).",
+      },
+      {
+        tex: "\\Ep_y(t)",
+        name: "episodes",
+        cls: "t-episode",
+        text: "Runs of a few good or bad days that the weather does not explain (section 2).",
+      },
+    ],
   },
 ];
 // Term colours, as in the CSS below (.t-*)
@@ -301,6 +367,7 @@ const C = {
   season: COLORS.sage,
   shift: COLORS.plum,
   episode: COLORS.ochre,
+  weather: COLORS.teal,
   counted: alpha(COLORS.faint, 0.6),
 };
 const FILL_YEARS = 12;

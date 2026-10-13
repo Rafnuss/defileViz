@@ -17,10 +17,11 @@ const TERMS = {
   Se: ["2ca02c", "S"],
   Sh: ["9467bd", "D"],
   Ep: ["e66c00", "E"],
+  Wx: ["17becf", "W"],
 };
 const expand = (e) =>
   e.replace(
-    /\\(Tr|Yr|Se|Sh|Ep)(?![a-zA-Z])/g,
+    /\\(Tr|Yr|Se|Sh|Ep|Wx)(?![a-zA-Z])/g,
     (_, k) => `\\textcolor{#${TERMS[k][0]}}{${TERMS[k][1]}}`,
   );
 

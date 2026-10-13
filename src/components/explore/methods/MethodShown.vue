@@ -151,6 +151,7 @@
                 ><span class="chip t-year"><Tex e="\Yr" /></span
                 ><span class="chip t-season"><Tex e="\Se" /></span
                 ><span class="chip t-shift"><Tex e="\Sh" /></span
+                ><span class="chip t-weather"><Tex e="\Wx" /></span
                 ><span class="chip t-episode"><Tex e="\Ep" /></span>
               </td>
             </tr>
@@ -158,7 +159,7 @@
               <td>Smooth trend (blue line), and its change since the first year</td>
               <td>
                 The season total of a <em>typical</em> year at that date, everything counted: good
-                and bad years and weather episodes are set to their average.
+                and bad years, the weather of the day and its episodes are set to their average.
               </td>
               <td class="text-center text-nowrap">
                 <span class="chip t-trend"><Tex e="\Tr" /></span
@@ -185,7 +186,18 @@
                 ><span class="chip t-year"><Tex e="\Yr" /></span
                 ><span class="chip t-season"><Tex e="\Se" /></span
                 ><span class="chip t-shift"><Tex e="\Sh" /></span
+                ><span class="chip t-weather"><Tex e="\Wx" /></span
                 ><span class="chip t-episode"><Tex e="\Ep" /></span>
+              </td>
+            </tr>
+            <tr>
+              <td>Weather effects and wind rose (blue)</td>
+              <td>
+                The model's effect of each kind of weather on the day's birds, everything else equal
+                (section 4b).
+              </td>
+              <td class="text-center text-nowrap">
+                <span class="chip t-weather"><Tex e="\Wx" /></span>
               </td>
             </tr>
             <tr>
@@ -199,6 +211,36 @@
       <p class="small text-muted">
         The intervals carry the uncertainty of every term, given the smoothness the model chose.
       </p>
+
+      <h6 id="m-weather-read" class="mt-4">4b. Reading the weather panel</h6>
+      <ul>
+        <li>
+          <strong>Each effect is a contrast</strong> between two ordinary days for the species: a
+          wet day against a dry one (1 mm of rain per hour), a sunny day against an overcast one,
+          thermals 500 m higher, pressure rising 5 hPa in a day, a day 3 °C colder than usual for
+          the date. A blue dot at ×0.5 means half the birds on the first kind of day, the date, the
+          year and the rest of the weather being the same; the bar is its 95% interval.
+        </li>
+        <li>
+          <strong>The rust diamonds are the counts</strong>: the counted days of the first kind
+          against those of the second, after taking out what the rest of the model expects of them
+          (the date, the year, the episodes and the other weather). Without that, wet days can look
+          good: for a Chaffinch, they often fall in the busiest weeks of October.
+        </li>
+        <li>
+          <strong>The wind rose</strong> shows a 5 m/s wind from each of eight sides against a calm
+          day: outside the solid circle more birds, inside fewer. The rust dots are the counted days
+          with wind from that side against calm days, the same way.
+        </li>
+        <li>
+          <strong>Only clear effects are drawn</strong>, the others are named below the plot (when
+          an effect is shown:
+          <a href="#" @click.prevent="$emit('method', 'reliability', 'm-weather-classes')"
+            >How reliable?</a
+          >). How the effects are fitted:
+          <a href="#" @click.prevent="$emit('method', 'model', 'm-weather')">The trend model</a>.
+        </li>
+      </ul>
     </section>
 
     <section id="m-limits">
@@ -214,6 +256,11 @@
           <li>
             <strong>Compared from {{ startYear }} only.</strong> Daily systematic counts began in
             1993; most passerines were only recorded in full from 2007.
+          </li>
+          <li>
+            <strong>Weather at one place.</strong> The weather is that of the Défilé, from a grid of
+            about 30 km. Birds also answer to the weather along their route, which the model only
+            sees through the episodes.
           </li>
           <li>
             <strong>No extrapolation.</strong> The model describes the years counted. It says
